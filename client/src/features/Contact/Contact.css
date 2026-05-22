@@ -1,7 +1,7 @@
 .contact {
   padding: 24px;
-  width: 100%;
-  max-width: 574px;
+  width: 574px;
+  max-width: 100%;
   position: relative;
   color: #ffffff;
   display: flex;
@@ -19,16 +19,30 @@
 .contact__link-icon {
   width: 36px;
   height: 36px;
-  background: rgba(166, 81, 251, 0.2);
+  background: rgba(166, 81, 251, 0.12);
+  border: 1px solid rgba(166, 81, 251, 0.2);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: all 0.22s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.contact__link-icon:hover {
+  background: rgba(166, 81, 251, 0.24);
+  border-color: rgba(166, 81, 251, 0.55);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(166, 81, 251, 0.2);
 }
 
 .contact__link-icon img {
   width: 16px;
   height: 16px;
+  transition: transform 0.22s ease;
+}
+
+.contact__link-icon:hover img {
+  transform: scale(1.1);
 }
 
 .contact__header {
@@ -43,12 +57,13 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 8px 0;
+  letter-spacing: -0.01em;
 }
 
 .contact__subtitle {
   font-family: 'Inter', sans-serif;
   font-size: 16px;
-  color: #ffffff;
+  color: #7b899d;
   margin: 0;
 }
 
@@ -74,18 +89,38 @@
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   color: #7588a3;
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
 
 .contact__field input,
 .contact__field textarea {
   background: rgba(11, 17, 30, 0.6);
-  border: 1px solid rgba(34, 47, 68, 0.3);
+  border: 1px solid rgba(34, 47, 68, 0.35);
   backdrop-filter: blur(12px);
   border-radius: 8px;
-  padding: 10px;
+  padding: 10px 12px;
   color: #ffffff;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
+  transition: all 0.22s ease;
+}
+
+.contact__field input::placeholder,
+.contact__field textarea::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.contact__field input:focus,
+.contact__field textarea:focus {
+  outline: none;
+  border-color: rgba(166, 81, 251, 0.5);
+  background: rgba(11, 17, 30, 0.8);
+  box-shadow: 0 0 14px rgba(166, 81, 251, 0.18);
+}
+
+.contact__field:focus-within label {
+  color: #c494ff;
 }
 
 .contact__field textarea {
@@ -101,7 +136,18 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 12px rgba(166, 81, 251, 0.15);
+}
+
+.contact__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(166, 81, 251, 0.3);
+  filter: brightness(1.08);
+}
+
+.contact__submit:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .contact__submit:disabled {
@@ -121,9 +167,41 @@
   text-align: center;
 }
 
+/* ── Maximized Window Styles (Full-Screen Adaptability) ── */
+.window--maximized .contact {
+  width: 100%;
+  max-width: 760px;
+  margin: 40px auto;
+  padding: 40px;
+  gap: 28px;
+}
+
+.window--maximized .contact__title {
+  font-size: 42px;
+}
+
+.window--maximized .contact__subtitle {
+  font-size: 18px;
+}
+
+.window--maximized .contact__form {
+  gap: 28px;
+}
+
+.window--maximized .contact__row {
+  gap: 28px;
+}
+
+.window--maximized .contact__field textarea {
+  height: 160px;
+}
+
+/* ── Media Queries (Mobile Viewports) ── */
 @media (max-width: 767px) {
   .contact {
+    width: 100%;
     padding: 16px;
+    gap: 16px;
   }
 
   .contact__title {
