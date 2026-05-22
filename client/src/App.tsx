@@ -10,6 +10,7 @@ import { DesktopIcon } from './ui/DesktopIcon/DesktopIcon';
 import { Taskbar } from './ui/Taskbar/Taskbar';
 import './App.css';
 import Banner from './ui/banner/Banner';
+import Chat from '@/features/Chat/Chat';
 
 const Desktop = () => {
   const { isAdmin, setIsAdmin, isMobile, windows } = useOS();
@@ -45,17 +46,28 @@ const Desktop = () => {
         </>
       )}
 
+      {/* Pinned Desktop Chat Widget (Desktop Only) */}
+      {!isMobile && (
+        <div className="desktop-chat-widget">
+          <Chat />
+        </div>
+      )}
+
       <div className="desktop-icons">
-        {visibleApps.map((config) => (
-          <DesktopIcon key={config.id} id={config.id} title={config.title} icon={config.icon} />
-        ))}
+        {visibleApps
+          .filter((config) => isMobile || config.id !== 'chat')
+          .map((config) => (
+            <DesktopIcon key={config.id} id={config.id} title={config.title} icon={config.icon} />
+          ))}
       </div>
 
-      {visibleApps.map((config) => (
-        <Window key={config.id} id={config.id} title={config.title}>
-          {config.content}
-        </Window>
-      ))}
+      {visibleApps
+        .filter((config) => isMobile || config.id !== 'chat')
+        .map((config) => (
+          <Window key={config.id} id={config.id} title={config.title}>
+            {config.content}
+          </Window>
+        ))}
 
       {/* Dynamic programmatically opened windows */}
       {Object.values(windows)

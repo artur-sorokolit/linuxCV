@@ -489,3 +489,59 @@
     opacity: 1;
   }
 }
+
+/* ── Pinned Desktop Chat Widget (Desktop Mode Only) ── */
+.desktop-chat-widget {
+  position: absolute;
+  top: 84px; /* Perfectly aligned below the TopBar and opportunity status badge */
+  left: 12px;
+  bottom: 56px; /* Leaves perfect gap above the taskbar */
+  width: 360px;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.desktop-chat-widget .chat-panel {
+  background: rgba(9, 14, 25, 0.4) !important;
+  border: 1px solid rgba(166, 81, 251, 0.15) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+  height: 100%;
+}
+
+/* Chat widget specific message overrides to keep layout perfectly compact and tailored */
+.desktop-chat-widget .chat-panel__messages {
+  padding: 16px 12px !important;
+  align-items: stretch !important;
+}
+
+.desktop-chat-widget .chat-msg-row {
+  max-width: 100% !important;
+}
+
+.desktop-chat-widget .chat-msg-row--user {
+  justify-content: flex-end !important;
+}
+
+.desktop-chat-widget .chat-msg-row--user .chat-msg--user {
+  max-width: 82% !important;
+}
+
+.desktop-chat-widget .chat-msg--assistant {
+  padding: 10px 14px !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+}
+
+.desktop-chat-widget .chat-panel__input-container {
+  padding: 0 12px 16px !important;
+  align-items: stretch !important;
+}
+
+.desktop-chat-widget .chat-panel__input-container > * {
+  max-width: 100% !important;
+}
+
