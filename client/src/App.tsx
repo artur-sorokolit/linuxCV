@@ -57,6 +57,15 @@ const Desktop = () => {
         </Window>
       ))}
 
+      {/* Dynamic programmatically opened windows */}
+      {Object.values(windows)
+        .filter((win) => !appConfigs.some((app) => app.id === win.id))
+        .map((win) => (
+          <Window key={win.id} id={win.id} title={win.title}>
+            {win.content}
+          </Window>
+        ))}
+
       <AnimatePresence>
         {!isMobile && Object.keys(windows).length > 0 && <Taskbar />}
       </AnimatePresence>

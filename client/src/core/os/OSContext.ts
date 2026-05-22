@@ -7,7 +7,7 @@ export type OSContextType = {
   isAdmin: boolean;
   setIsAdmin: (val: boolean) => void;
   isMobile: boolean;
-  openWindow: (id: string, title: string) => void;
+  openWindow: (id: string, title: string, content?: React.ReactNode) => void;
   closeWindow: (id: string) => void;
   toggleMinimize: (id: string) => void;
   focusWindow: (id: string) => void;

@@ -4,6 +4,7 @@ import educationIcon from '@/shared/assets/icons/education.svg';
 import techIcon from '@/shared/assets/icons/tech.svg';
 import contactIcon from '@/shared/assets/icons/contact.svg';
 import settingsIcon from '@/shared/assets/icons/settings.svg';
+import projectsIcon from '@/shared/assets/icons/projects.svg';
 import type { AppConfig } from '@/shared/types/app';
 
 import AboutMe from '@/features/AboutMe/AboutMe';
@@ -13,6 +14,7 @@ import TechStack from '@/features/TechStack/TechStack';
 import Contact from '@/features/Contact/Contact';
 import Admin from '@/features/Admin/Admin';
 import Chat from '@/features/Chat/Chat';
+import Projects from '@/features/Projects/Projects';
 import chatIcon from '@/shared/assets/icons/chat.svg';
 
 import { createElement } from 'react';
@@ -35,6 +37,12 @@ export const appConfigs: AppConfig[] = [
     title: 'Experience',
     icon: experienceIcon,
     content: createElement(Experience),
+  },
+  {
+    id: 'projects',
+    title: 'Projects',
+    icon: projectsIcon,
+    content: createElement(Projects),
   },
   {
     id: 'education',

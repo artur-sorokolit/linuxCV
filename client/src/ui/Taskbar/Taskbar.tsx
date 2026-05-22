@@ -9,7 +9,8 @@ export const Taskbar = () => {
   const openWindows = Object.values(windows).filter((w) => w.isOpen);
 
   const getIcon = (id: string) => {
-    const config = appConfigs.find((c) => c.id === id);
+    const appId = id.startsWith('project-') ? 'projects' : id;
+    const config = appConfigs.find((c) => c.id === appId);
     return config?.icon ?? '';
   };
 

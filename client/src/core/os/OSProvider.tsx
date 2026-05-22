@@ -8,6 +8,7 @@ export type WindowState = {
   isMinimized: boolean;
   isMaximized: boolean;
   zIndex: number;
+  content?: React.ReactNode;
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,7 +46,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, []);
 
   const openWindow = useCallback(
-    (id: string, title: string) => {
+    (id: string, title: string, content?: React.ReactNode) => {
       setWindows((prev) => ({
         ...prev,
         [id]: {
@@ -55,6 +56,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           isMinimized: false,
           isMaximized: false,
           zIndex: maxZIndex + 1,
+          content: content || prev[id]?.content,
         },
       }));
       setActiveWindowId(id);
