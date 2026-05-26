@@ -12,17 +12,8 @@ export type WindowState = {
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [windows, setWindows] = useState<Record<string, WindowState>>({
-    about: {
-      id: 'about',
-      title: 'About Me',
-      isOpen: true,
-      isMinimized: false,
-      isMaximized: false,
-      zIndex: 1,
-    },
-  });
-  const [activeWindowId, setActiveWindowId] = useState<string | null>('about');
+  const [windows, setWindows] = useState<Record<string, WindowState>>({});
+  const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const [maxZIndex, setMaxZIndex] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isAdmin, setIsAdminState] = useState<boolean>(() => {

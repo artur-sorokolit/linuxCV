@@ -25,7 +25,7 @@
 
 .education__cards {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1fr;
   gap: 24px;
 }
 
@@ -178,3 +178,32 @@
     padding: 24px;
   }
 }
+
+/* ── Window Overrides for Desktop Windowing Environment ── */
+div.window--education {
+  width: 680px !important;
+  height: 520px !important;
+  max-height: 80vh !important;
+}
+
+div.window--education .window-content {
+  overflow-y: auto !important;
+}
+
+div.window--education.window--maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+@media (max-width: 767px) {
+  div.window--education {
+    width: 100vw !important;
+    height: 95vh !important;
+    top: 5vh !important;
+    border-top-left-radius: 20px !important;
+    border-top-right-radius: 20px !important;
+  }
+}
+
