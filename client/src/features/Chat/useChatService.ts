@@ -66,7 +66,6 @@ export const useChatService = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [state.messages, state.isLoading]);
 
-  // Refresh suggestions when messages clear (new chat)
   useEffect(() => {
     if (state.messages.length === 0) {
       setActiveSuggestions(getRandomSuggestions());

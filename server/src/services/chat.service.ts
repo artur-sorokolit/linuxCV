@@ -46,28 +46,18 @@ export class ChatService {
 
   async processMessage(message: string, sessionId: string, model: string) {
     const db = await getDb();
-
-    // Fetch existing history for this session
     const history = await this.getHistory(sessionId);
-
-    // Get AI response
     const reply = await this.llmProvider.chat(message, history, model);
-
-    // Persist user message
     await db.run('INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)', [
       sessionId,
       'user',
       message,
     ]);
-
-    // Persist assistant response
     await db.run('INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)', [
       sessionId,
       'assistant',
       reply,
     ]);
-
-    // Optionally update session title if it's the first message
     if (history.length === 0) {
       const title = message.slice(0, 30) + (message.length > 30 ? '...' : '');
       await db.run('UPDATE chat_sessions SET title = ? WHERE id = ?', [title, sessionId]);

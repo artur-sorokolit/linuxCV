@@ -30,7 +30,6 @@ class DatabaseService {
   }
 
   private static async runMigrations(db: Database) {
-    // 1. Create migrations table if not exists
     await db.exec(`
       CREATE TABLE IF NOT EXISTS migrations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,11 +38,6 @@ class DatabaseService {
       )
     `);
 
-    // 2. Define migrations (in a real app, these would be read from the migrations folder)
-    // For simplicity and robustness in this environment, we'll keep them here
-    // or read them if we want to be fully compliant with the user's request.
-
-    // Initial Schema
     await this.applyMigration(
       db,
       '001_initial',
@@ -74,11 +68,8 @@ class DatabaseService {
     `
     );
 
-    // Migration to add session_id if it was missing from an old install
     const columns = await db.all('PRAGMA table_info(chat_history)');
-    const hasSessionId = columns.some(
-      (col: { name: string }) => col.name === 'session_id'
-    );
+    const hasSessionId = columns.some((col: { name: string }) => col.name === 'session_id');
     if (!hasSessionId) {
       console.log('Migrating chat_history: adding session_id column');
       await db.exec(

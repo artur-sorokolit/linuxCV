@@ -4,7 +4,6 @@ import { getDb } from './db';
 
 async function bootstrap() {
   try {
-    // Initialize Database before starting the server
     await getDb();
 
     app.listen(config.port, () => {
