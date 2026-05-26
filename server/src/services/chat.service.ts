@@ -38,7 +38,7 @@ export class ChatService {
       'SELECT role, content FROM chat_history WHERE session_id = ? ORDER BY created_at ASC',
       [sessionId]
     );
-    return rows.map((row: { role: string; content: string }) => ({
+    return rows.map((row: { role: 'user' | 'assistant' | 'system'; content: string }) => ({
       role: row.role,
       content: row.content,
     }));
