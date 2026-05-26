@@ -1,27 +1,5 @@
 import './TechStack.css';
-
-const categories = [
-  {
-    title: 'Frontend',
-    color: '#A651FB',
-    tags: ['React', 'TypeScript', 'Vite', 'Framer Motion', 'CSS'],
-  },
-  {
-    title: 'Backend',
-    color: '#3C83F6',
-    tags: ['Node.js', 'Express', 'Python', 'Django', 'FastAPI', 'PostgreSQL'],
-  },
-  {
-    title: 'Databases',
-    color: '#1FD5F9',
-    tags: ['PostgreSQL', 'MongoDB', 'Redis'],
-  },
-  {
-    title: 'DevOps & Tools',
-    color: '#1FD5F9',
-    tags: ['Docker', 'Git', 'AWS', 'CI/CD', 'Linux'],
-  },
-];
+import { techStackData } from '@shared/data/techStack';
 
 const TechStack = () => {
   return (
@@ -35,7 +13,7 @@ const TechStack = () => {
         </p>
       </div>
       <div className="tech-stack__categories">
-        {categories.map((category, i) => (
+        {techStackData.map((category, i) => (
           <div className="tech-stack-card" key={i}>
             <div className="tech-stack-card__header">
               <div className="tech-stack-card__marker" style={{ background: category.color }}></div>

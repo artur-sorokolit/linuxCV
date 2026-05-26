@@ -1,6 +1,8 @@
+import { contactLinks } from '@shared/data/contacts';
+
 export const LINKS = {
-  email: 'mailto:artur.sorokolit@gmail.com',
-  github: 'https://github.com/artur-sorokolit',
-  linkedin: 'https://www.linkedin.com/in/sorokolitartur/',
-  projectRepo: 'https://artur-sorokolit.github.io/linuxCV/',
+  email: contactLinks.email,
+  github: contactLinks.github,
+  linkedin: contactLinks.linkedin,
+  projectRepo: contactLinks.projectRepo,
 };

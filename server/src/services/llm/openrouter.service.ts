@@ -13,15 +13,18 @@ export class OpenRouterService implements LLMProvider {
     }
 
     try {
+      const messages = [
+        { role: 'system', content: llmConfig.systemPrompt },
+        ...history,
+        { role: 'user', content: message },
+      ];
+      console.log('Sending messages to OpenRouter:', JSON.stringify(messages, null, 2));
+
       const response = await axios.post(
         this.apiUrl,
         {
           model: model || llmConfig.model,
-          messages: [
-            { role: 'system', content: llmConfig.systemPrompt },
-            ...history,
-            { role: 'user', content: message },
-          ],
+          messages,
           temperature: llmConfig.temperature,
           max_tokens: llmConfig.maxTokens,
         },

@@ -2,13 +2,7 @@ import './Education.css';
 import educationIcon from '@/shared/assets/icons/education.svg';
 import certIcon from '@/shared/assets/icons/certification.svg';
 import languageIcon from '@/shared/assets/icons/tech.svg';
-
-const courses = [
-  { name: 'Python', level: 'Advanced' },
-  { name: 'JavaScript / TypeScript', level: 'Advanced' },
-  { name: 'React & Angular', level: 'Advanced' },
-  { name: 'Node.js & Express', level: 'Intermediate' },
-];
+import { educationDegree, coursesData } from '@shared/data/education';
 
 const Education = () => {
   return (
@@ -26,14 +20,12 @@ const Education = () => {
             <img src={educationIcon} alt="Academic" />
           </div>
           <div className="education-card__content">
-            <h3 className="education-card__title">Bachelor of Cybersecurity</h3>
-            <p className="education-card__subtitle">Kyiv Aviation Institute (KAI), formerly NAU</p>
-            <p className="education-card__department">
-              Faculty of Information Security &amp; Cybersecurity (BICS)
-            </p>
+            <h3 className="education-card__title">{educationDegree.title}</h3>
+            <p className="education-card__subtitle">{educationDegree.institution}</p>
+            <p className="education-card__department">{educationDegree.department}</p>
             <div className="education-card__meta">
-              <span className="education-card__year">2026</span>
-              <span>• Cybersecurity &amp; Information Protection</span>
+              <span className="education-card__year">{educationDegree.year}</span>
+              <span>• {educationDegree.specialization}</span>
             </div>
           </div>
         </div>
@@ -45,7 +37,7 @@ const Education = () => {
           <div className="education-card__content">
             <h3 className="education-card__title">Programming Courses</h3>
             <ul className="education-card__list">
-              {courses.map((course) => (
+              {coursesData.map((course) => (
                 <li key={course.name} className="education-card__list-item">
                   <img className="education-card__list-icon" src={languageIcon} alt="" />
                   <span className="education-card__list-name">{course.name}</span>

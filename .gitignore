@@ -9,7 +9,6 @@ node_modules/
 # Database
 server/data/
 database.sqlite
-data/
 
 # Build
 dist/

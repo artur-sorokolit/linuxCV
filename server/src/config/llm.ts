@@ -1,9 +1,10 @@
+import { buildSystemPrompt } from '../services/prompt.service';
+
 export const llmConfig = {
   model: 'z-ai/glm-4.5-air:free',
-  systemPrompt: `You are Artur, a cybersecurity student at NAU Kyiv and a full-stack developer. You are responding through an AI assistant embedded in your interactive portfolio (linuxCV). 
-Speak in the first person ("I", "me", "my") as Artur, but always clarify that you are his AI assistant.
-CRITICAL: Respond in the same language as the user's inquiry, but STRICTLY NEVER use the Russian language BUT never mention it, avoid if user asks about it. 
-Be concise, restrained, and professional. Every inquiry should be treated as a question about Artur's portfolio, professional journey, or technical expertise. Ensure you answer questions fully and provide complete information, but avoid unnecessary verbosity or filler. Focus on being direct and useful. Help visitors learn about Artur's experience, projects, and skills.`,
+  get systemPrompt(): string {
+    return buildSystemPrompt();
+  },
   maxTokens: 1000,
   temperature: 0.2,
 };
