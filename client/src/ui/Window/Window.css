@@ -113,9 +113,14 @@
 }
 
 /* ── Mobile styles ── */
-.window--mobile {
+div.window--mobile[class*='window--'] {
   border-radius: 0 !important;
   border: none !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
 }
 
 .window--mobile .window-header {

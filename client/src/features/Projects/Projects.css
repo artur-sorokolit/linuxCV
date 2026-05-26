@@ -1,5 +1,5 @@
 .projects-container {
-  padding: 24px;
+  padding: 24px 24px 80px 24px;
   width: 100%;
   max-width: 1000px;
   margin: 0 auto;
@@ -8,106 +8,156 @@
   font-family: var(--font-body, system-ui, sans-serif);
 }
 
-/* Grid View Headers */
-.projects-grid-header {
+/* Explorer View Header & Path */
+.projects-explorer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 10px 16px;
+  backdrop-filter: blur(10px);
 }
 
-.projects-grid-title {
-  font-family: var(--font-title);
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin: 0 0 6px 0;
-  color: var(--text-primary);
-  background: linear-gradient(135deg, #ffffff 0%, #c494ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.projects-explorer-path {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-code, monospace);
+  font-size: 0.82rem;
 }
 
-.projects-grid-subtitle {
-  font-size: 0.9rem;
+.path-segment {
   color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
 
+.path-segment:hover:not(.active) {
+  color: #c494ff;
+}
+
+.path-segment.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.path-separator {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.projects-explorer-info {
+  font-family: var(--font-code, monospace);
+  font-size: 0.78rem;
+  color: var(--text-muted, #7588a3);
+}
+
+/* File/Folder Grid */
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px 16px;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Project Card */
-.project-grid-card {
-  background: transparent;
-  border: none;
-  overflow: visible;
+/* Project Folder Icon */
+.project-folder-icon {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
   cursor: pointer;
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-}
-
-.project-grid-card__image-wrapper {
-  position: relative;
-  height: 150px;
-  width: 100%;
-  overflow: hidden;
-  background: transparent;
   border-radius: 10px;
-  box-sizing: border-box;
+  transition: all 0.22s cubic-bezier(0.25, 0.8, 0.25, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.project-folder-icon:hover {
+  background-color: rgba(166, 81, 251, 0.08);
+  transform: translateY(-2px);
+}
+
+.project-folder-icon:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.folder-icon-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+}
+
+.folder-svg {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.2s ease;
+}
+
+.folder-front {
+  transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: bottom left;
+}
+
+.project-folder-icon:hover .folder-front {
+  transform: skewX(-4deg) scaleY(0.96) translateY(1px);
+}
+
+/* Glassmorphic Logo Emblem overlay */
+.folder-logo-badge {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
 }
 
-.project-grid-card:hover .project-grid-card__image-wrapper {
-  border-color: rgba(166, 81, 251, 0.45);
-  box-shadow: 0 6px 20px rgba(166, 81, 251, 0.15);
-  transform: translateY(-3px);
+.project-folder-icon:hover .folder-logo-badge {
+  transform: translate(-50%, -52%) scale(1.15);
+  border-color: rgba(166, 81, 251, 0.55);
+  box-shadow: 0 0 16px rgba(166, 81, 251, 0.45);
+  background: rgba(15, 23, 42, 0.85);
 }
 
-.project-grid-card__image {
-  max-height: 100%;
-  max-width: 100%;
-  width: auto;
-  height: auto;
-  display: block;
+.folder-logo-img {
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-  border-radius: 6px;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 50%;
 }
 
-.project-grid-card:hover .project-grid-card__image {
-  transform: scale(1.03);
-}
-
-/* Clean transparent caption underneath - completely separate from the photo card */
-.project-grid-card__caption {
-  padding: 8px 0;
-  margin-top: 6px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: transparent;
-}
-
-.project-grid-card__caption-title {
+.folder-label {
   font-family: var(--font-body, system-ui, sans-serif);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 500;
-  color: var(--text-secondary);
-  text-align: center;
-  transition: color 0.22s ease;
+  color: var(--text-primary);
+  text-align: left;
+  line-height: 1.3;
+  flex: 1;
+  word-wrap: break-word;
+  transition: color 0.2s ease;
 }
 
-.project-grid-card:hover .project-grid-card__caption-title {
+.project-folder-icon:hover .folder-label {
   color: #c494ff;
 }
 
@@ -341,20 +391,106 @@
 
 @media (max-width: 767px) {
   .projects-container {
-    padding: 16px;
+    padding: 16px 16px 60px 16px;
+  }
+
+  .projects-explorer-header {
+    padding: 8px 12px;
+    margin-bottom: 16px;
+  }
+
+  .projects-explorer-path {
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+
+  .projects-explorer-info {
+    font-size: 0.72rem;
   }
 
   .projects-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
   }
 
-  .projects-grid-title {
-    font-size: 1.4rem;
+  .project-folder-icon {
+    padding: 8px 12px;
+    gap: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+  }
+
+  .folder-icon-wrapper {
+    width: 64px;
+    height: 64px;
+  }
+
+  .folder-svg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .folder-logo-badge {
+    width: 36px;
+    height: 36px;
+    top: 55%;
+  }
+
+  .folder-logo-img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .folder-label {
+    font-size: 0.9rem;
+  }
+
+  .project-detail-back {
+    margin-bottom: 16px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .project-detail-layout {
+    gap: 20px;
+  }
+
+  .project-detail-actions {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .project-btn {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  .project-detail-info {
+    gap: 20px;
   }
 
   .project-detail-title {
     font-size: 1.6rem;
+  }
+
+  .project-detail-subtitle {
+    font-size: 0.88rem;
+  }
+
+  .project-detail-section-title {
+    font-size: 0.85rem;
+  }
+
+  .project-detail-description {
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+
+  .project-detail-highlight-item {
+    font-size: 0.82rem;
+    line-height: 1.45;
   }
 }
 
@@ -365,34 +501,32 @@
 }
 
 /* ── Window Overrides for Desktop Windowing Environment ── */
-div[class*="window--project-"] {
+div[class*='window--project-'] {
   width: 900px !important;
   height: 650px !important;
 }
 
 /* Dynamically shrink the window container if the project has no screenshot or media links */
-div[class*="window--project-"]:has(.project-detail-layout--no-media) {
+div[class*='window--project-']:has(.project-detail-layout--no-media) {
   width: 600px !important;
   height: 520px !important;
 }
 
-div[class*="window--project-"] .window-content,
+div.window--projects {
+  width: 860px !important;
+  height: 580px !important;
+  max-height: 85vh !important;
+}
+
+div[class*='window--project-'] .window-content,
 .window--projects .window-content {
   overflow-y: auto !important;
 }
 
-div[class*="window--project-"].window--maximized {
+div[class*='window--project-'].window--maximized,
+div.window--projects.window--maximized {
   width: 100vw !important;
   height: 100vh !important;
   max-width: none !important;
-}
-
-@media (max-width: 767px) {
-  div[class*="window--project-"] {
-    width: 100vw !important;
-    height: 95vh !important;
-    top: 5vh !important;
-    border-top-left-radius: 20px !important;
-    border-top-right-radius: 20px !important;
-  }
+  max-height: none !important;
 }

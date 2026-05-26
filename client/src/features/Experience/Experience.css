@@ -183,14 +183,3 @@ div.window--experience.window--maximized {
   max-width: none !important;
   max-height: none !important;
 }
-
-@media (max-width: 767px) {
-  div.window--experience {
-    width: 100vw !important;
-    height: 95vh !important;
-    top: 5vh !important;
-    border-top-left-radius: 20px !important;
-    border-top-right-radius: 20px !important;
-  }
-}
-

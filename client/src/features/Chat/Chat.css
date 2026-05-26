@@ -10,16 +10,6 @@
   max-width: none !important;
 }
 
-@media (max-width: 767px) {
-  .window--chat {
-    width: 100vw !important;
-    height: 95vh !important;
-    top: 5vh !important;
-    border-top-left-radius: 20px !important;
-    border-top-right-radius: 20px !important;
-  }
-}
-
 /* ── Chat Container (Wrapper) ── */
 .chat-container {
   width: 100%;
@@ -544,4 +534,3 @@
 .desktop-chat-widget .chat-panel__input-container > * {
   max-width: 100% !important;
 }
-

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useOS } from '@/core/os/OSContext';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ExternalLink, Code } from 'lucide-react';
@@ -5,7 +6,12 @@ import { type Project, projectsData } from './projectsData';
 import './Projects.css';
 
 const Projects = () => {
-  const { openWindow } = useOS();
+  const { openWindow, isMobile } = useOS();
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
+
+  if (isMobile && activeProject) {
+    return <ProjectDetail project={activeProject} onBack={() => setActiveProject(null)} />;
+  }
 
   return (
     <div className="projects-container">
@@ -15,29 +21,85 @@ const Projects = () => {
         transition={{ duration: 0.22 }}
         className="projects-grid-view"
       >
-        <div className="projects-grid-header">
-          <h2 className="projects-grid-title">Featured Projects</h2>
+        <div className="projects-explorer-header">
+          <div className="projects-explorer-path">
+            <span className="path-segment">📁 root</span>
+            <span className="path-separator">/</span>
+            <span className="path-segment active">📂 projects</span>
+          </div>
+          <div className="projects-explorer-info">{projectsData.length} items</div>
         </div>
 
         <div className="projects-grid">
           {projectsData.map((project) => (
             <div
-              className="project-grid-card"
+              className="project-folder-icon"
               key={project.id}
               onClick={() => {
-                openWindow(
-                  `project-${project.id}`,
-                  project.title,
-                  <ProjectDetail project={project} />
-                );
+                if (isMobile) {
+                  setActiveProject(project);
+                } else {
+                  openWindow(
+                    `project-${project.id}`,
+                    project.title,
+                    <ProjectDetail project={project} />
+                  );
+                }
               }}
             >
-              <div className="project-grid-card__image-wrapper">
-                <img src={project.logo} alt={project.title} className="project-grid-card__image" />
+              <div className="folder-icon-wrapper">
+                <svg className="folder-svg" width="70" height="70" viewBox="0 0 70 70" fill="none">
+                  {/* Back cover */}
+                  <path
+                    className="folder-back"
+                    d="M6 16C6 13.7909 7.79086 12 10 12H24L31 19H60C62.2091 19 64 20.7909 64 23V56C64 58.2091 62.2091 60 60 60H10C7.79086 60 6 58.2091 6 56V16Z"
+                    fill={`url(#folderBackGrad-${project.id})`}
+                  />
+                  {/* Front cover */}
+                  <path
+                    className="folder-front"
+                    d="M6 24C6 21.7909 7.79086 20 10 20H60C62.2091 20 64 21.7909 64 24V56C64 58.2091 62.2091 60 60 60H10C7.79086 60 6 58.2091 6 56V24Z"
+                    fill={`url(#folderFrontGrad-${project.id})`}
+                    stroke="rgba(255, 255, 255, 0.12)"
+                    strokeWidth="1.2"
+                  />
+
+                  <defs>
+                    <linearGradient
+                      id={`folderBackGrad-${project.id}`}
+                      x1="6"
+                      y1="12"
+                      x2="64"
+                      y2="60"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stopColor="#a855f7" stopOpacity="0.45" />
+                      <stop offset="1" stopColor="#4facfe" stopOpacity="0.2" />
+                    </linearGradient>
+                    <linearGradient
+                      id={`folderFrontGrad-${project.id}`}
+                      x1="6"
+                      y1="20"
+                      x2="64"
+                      y2="60"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stopColor="#a855f7" stopOpacity="0.3" />
+                      <stop offset="1" stopColor="#00f2fe" stopOpacity="0.12" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Floating badge over folder front flap */}
+                <div className="folder-logo-badge">
+                  <img
+                    src={project.logo}
+                    alt={project.title}
+                    className={`folder-logo-img logo-img--${project.id}`}
+                  />
+                </div>
               </div>
-              <div className="project-grid-card__caption">
-                <span className="project-grid-card__caption-title">{project.title}</span>
-              </div>
+              <span className="folder-label">{project.title}</span>
             </div>
           ))}
         </div>
@@ -46,19 +108,29 @@ const Projects = () => {
   );
 };
 
-export const ProjectDetail = ({ project }: { project: Project }) => {
+interface ProjectDetailProps {
+  project: Project;
+  onBack?: () => void;
+}
+
+export const ProjectDetail = ({ project, onBack }: ProjectDetailProps) => {
   const { closeWindow } = useOS();
 
   const hasImage = !!project.image;
   const hasMedia = hasImage || !!project.githubUrl || !!project.demoUrl;
 
+  const handleBackClick = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      closeWindow(`project-${project.id}`);
+    }
+  };
+
   return (
     <div className="projects-container">
       <div className="project-detail-view">
-        <button
-          className="project-detail-back"
-          onClick={() => closeWindow(`project-${project.id}`)}
-        >
+        <button className="project-detail-back" onClick={handleBackClick}>
           <ArrowLeft size={16} />
           <span>Back to Projects</span>
         </button>
