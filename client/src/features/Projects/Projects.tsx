@@ -49,13 +49,11 @@ const Projects = () => {
             >
               <div className="folder-icon-wrapper">
                 <svg className="folder-svg" width="70" height="70" viewBox="0 0 70 70" fill="none">
-                  {/* Back cover */}
                   <path
                     className="folder-back"
                     d="M6 16C6 13.7909 7.79086 12 10 12H24L31 19H60C62.2091 19 64 20.7909 64 23V56C64 58.2091 62.2091 60 60 60H10C7.79086 60 6 58.2091 6 56V16Z"
                     fill={`url(#folderBackGrad-${project.id})`}
                   />
-                  {/* Front cover */}
                   <path
                     className="folder-front"
                     d="M6 24C6 21.7909 7.79086 20 10 20H60C62.2091 20 64 21.7909 64 24V56C64 58.2091 62.2091 60 60 60H10C7.79086 60 6 58.2091 6 56V24Z"
@@ -90,7 +88,6 @@ const Projects = () => {
                   </defs>
                 </svg>
 
-                {/* Floating badge over folder front flap */}
                 <div className="folder-logo-badge">
                   <img
                     src={project.logo}
@@ -138,7 +135,6 @@ export const ProjectDetail = ({ project, onBack }: ProjectDetailProps) => {
         <div
           className={`project-detail-layout ${!hasMedia ? 'project-detail-layout--no-media' : ''}`}
         >
-          {/* Left Pane - Image and Links */}
           {hasMedia && (
             <div className="project-detail-media">
               {hasImage && (
@@ -175,7 +171,6 @@ export const ProjectDetail = ({ project, onBack }: ProjectDetailProps) => {
             </div>
           )}
 
-          {/* Right Pane - Rich Specifications */}
           <div className="project-detail-info">
             <div className="project-detail-header">
               <div className="project-detail-role">{project.role}</div>

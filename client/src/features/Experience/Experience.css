@@ -107,7 +107,6 @@
   font-weight: 500;
 }
 
-/* Timeline styles */
 .experience-timeline {
   width: 30px;
   position: relative;
@@ -166,7 +165,6 @@
   }
 }
 
-/* ── Window Overrides for Desktop Windowing Environment ── */
 div.window--experience {
   width: 800px !important;
   height: 550px !important;

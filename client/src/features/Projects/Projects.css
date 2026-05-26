@@ -8,7 +8,6 @@
   font-family: var(--font-body, system-ui, sans-serif);
 }
 
-/* Explorer View Header & Path */
 .projects-explorer-header {
   display: flex;
   justify-content: space-between;
@@ -54,7 +53,6 @@
   color: var(--text-muted, #7588a3);
 }
 
-/* File/Folder Grid */
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -63,7 +61,6 @@
   box-sizing: border-box;
 }
 
-/* Project Folder Icon */
 .project-folder-icon {
   display: flex;
   flex-direction: row;
@@ -110,7 +107,6 @@
   transform: skewX(-4deg) scaleY(0.96) translateY(1px);
 }
 
-/* Glassmorphic Logo Emblem overlay */
 .folder-logo-badge {
   position: absolute;
   top: 55%;
@@ -161,7 +157,6 @@
   color: #c494ff;
 }
 
-/* Detail View Back Button */
 .project-detail-back {
   display: inline-flex;
   align-items: center;
@@ -184,7 +179,6 @@
   transform: translateX(-2px);
 }
 
-/* Detail View Layout */
 .project-detail-layout {
   display: grid;
   grid-template-columns: 1.1fr 1.4fr;
@@ -192,7 +186,6 @@
   align-items: start;
 }
 
-/* Left Media Column */
 .project-detail-media {
   display: flex;
   flex-direction: column;
@@ -260,7 +253,6 @@
   transform: translateY(-1px);
 }
 
-/* Right Info Column */
 .project-detail-info {
   display: flex;
   flex-direction: column;
@@ -348,7 +340,6 @@
   border-color: rgba(166, 81, 251, 0.3);
 }
 
-/* Key Contributions List */
 .project-detail-highlights {
   list-style: none;
   padding: 0;
@@ -375,7 +366,6 @@
   font-size: 0.75rem;
 }
 
-/* Responsive Breakpoints */
 @media (max-width: 900px) {
   .project-detail-layout {
     grid-template-columns: 1fr;
@@ -500,13 +490,11 @@
   margin: 0 auto;
 }
 
-/* ── Window Overrides for Desktop Windowing Environment ── */
 div[class*='window--project-'] {
   width: 900px !important;
   height: 650px !important;
 }
 
-/* Dynamically shrink the window container if the project has no screenshot or media links */
 div[class*='window--project-']:has(.project-detail-layout--no-media) {
   width: 600px !important;
   height: 520px !important;
