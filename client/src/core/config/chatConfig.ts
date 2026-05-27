@@ -13,18 +13,6 @@ export const AVAILABLE_MODELS: ChatModel[] = [
     isFree: true,
   },
   {
-    id: 'qwen/qwen3-coder:free',
-    name: 'Qwen 3 Coder',
-    provider: 'Alibaba',
-    isFree: true,
-  },
-  {
-    id: 'qwen/qwen3-next-80b-a3b-instruct:free',
-    name: 'Qwen 3 Next 80B',
-    provider: 'Alibaba',
-    isFree: true,
-  },
-  {
     id: 'tencent/hy3-preview:free',
     name: 'Hunyuan 3 Preview',
     provider: 'Tencent',
