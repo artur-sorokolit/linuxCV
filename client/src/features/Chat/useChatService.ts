@@ -61,6 +61,22 @@ export const useChatService = () => {
   const [isHistoryOpen, setHistoryOpen] = useState(false);
   const [activeSuggestions, setActiveSuggestions] = useState<string[]>(getRandomSuggestions());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -135,8 +151,16 @@ export const useChatService = () => {
       setInput('');
       dispatch({ type: 'SET_LOADING', payload: true });
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
-        const { reply } = await api.postMessage(text.trim(), sessionId, state.selectedModel.id);
+        const { reply } = await api.postMessage(
+          text.trim(),
+          sessionId,
+          state.selectedModel.id,
+          controller.signal
+        );
         dispatch({
           type: 'APPEND_MESSAGE',
           payload: { role: 'assistant', content: reply || 'No response' },
@@ -144,13 +168,23 @@ export const useChatService = () => {
         const fresh = await api.fetchSessions();
         dispatch({ type: 'SET_SESSIONS', payload: fresh });
       } catch (e) {
-        console.error('Chat error:', e);
-        const msg = e instanceof Error ? e.message : 'Unable to connect to AI brain.';
-        dispatch({
-          type: 'APPEND_MESSAGE',
-          payload: { role: 'assistant', content: msg },
-        });
+        if (e instanceof Error && e.name === 'AbortError') {
+          dispatch({
+            type: 'APPEND_MESSAGE',
+            payload: { role: 'assistant', content: 'Generation stopped.' },
+          });
+        } else {
+          console.error('Chat error:', e);
+          const msg = e instanceof Error ? e.message : 'Unable to connect to AI brain.';
+          dispatch({
+            type: 'APPEND_MESSAGE',
+            payload: { role: 'assistant', content: msg },
+          });
+        }
       } finally {
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },
@@ -179,5 +213,6 @@ export const useChatService = () => {
     sendMessage,
     setSelectedModel,
     activeSuggestions,
+    stopGeneration,
   };
 };

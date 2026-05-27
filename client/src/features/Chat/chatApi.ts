@@ -36,11 +36,13 @@ export const fetchSessionHistory = async (sessionId: string): Promise<Message[]>
 export const postMessage = async (
   text: string,
   sessionId: string,
-  model: string
+  model: string,
+  signal?: AbortSignal
 ): Promise<{ reply: string }> => {
   return request<{ reply: string }>('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: text, sessionId, model }),
+    signal,
   });
 };

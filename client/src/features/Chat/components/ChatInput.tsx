@@ -11,6 +11,8 @@ type Props = {
   setModelDropdownOpen: Dispatch<SetStateAction<boolean>>;
   selectedModel: ChatModel;
   setSelectedModel: (model: ChatModel) => void;
+  isLoading: boolean;
+  stopGeneration: () => void;
 };
 
 export const ChatInput: React.FC<Props> = ({
@@ -23,6 +25,8 @@ export const ChatInput: React.FC<Props> = ({
   setModelDropdownOpen,
   selectedModel,
   setSelectedModel,
+  isLoading,
+  stopGeneration,
 }) => (
   <div className="chat-panel__input-container">
     <div className="chat-panel__suggestions">
@@ -89,16 +93,29 @@ export const ChatInput: React.FC<Props> = ({
           </div>
         </div>
 
-        <button type="submit" className="chat-panel__send-btn" disabled={!input.trim()}>
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path
-              d="M1 6.5H12M12 6.5L6.5 1M12 6.5L6.5 12"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
+        {isLoading ? (
+          <button
+            type="button"
+            className="chat-panel__stop-btn"
+            onClick={stopGeneration}
+            title="Stop Generation"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect width="10" height="10" x="1" y="1" rx="1.5" fill="currentColor" />
+            </svg>
+          </button>
+        ) : (
+          <button type="submit" className="chat-panel__send-btn" disabled={!input.trim()}>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path
+                d="M1 6.5H12M12 6.5L6.5 1M12 6.5L6.5 12"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
       </div>
     </form>
   </div>

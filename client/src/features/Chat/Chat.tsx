@@ -24,6 +24,7 @@ export const Chat = () => {
     sendMessage,
     setSelectedModel,
     activeSuggestions,
+    stopGeneration,
   } = useChatService();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -70,6 +71,8 @@ export const Chat = () => {
           setModelDropdownOpen={setModelDropdownOpen}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
+          isLoading={isLoading}
+          stopGeneration={stopGeneration}
         />
       </div>
     </div>
