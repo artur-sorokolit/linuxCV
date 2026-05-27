@@ -11,7 +11,6 @@ type Props = {
   setModelDropdownOpen: Dispatch<SetStateAction<boolean>>;
   selectedModel: ChatModel;
   setSelectedModel: (model: ChatModel) => void;
-  startNewChat: () => void;
 };
 
 export const ChatInput: React.FC<Props> = ({
@@ -24,7 +23,6 @@ export const ChatInput: React.FC<Props> = ({
   setModelDropdownOpen,
   selectedModel,
   setSelectedModel,
-  startNewChat,
 }) => (
   <div className="chat-panel__input-container">
     <div className="chat-panel__suggestions">
@@ -46,17 +44,6 @@ export const ChatInput: React.FC<Props> = ({
 
       <div className="chat-panel__input-actions">
         <div className="chat-panel__left-actions">
-          <button
-            type="button"
-            className="chat-panel__action-icon"
-            onClick={startNewChat}
-            title="New Chat"
-          >
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <path d="M6.5 1V12M1 6.5H12" stroke="#7588A3" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-
           <div
             className="chat-panel__model-selector"
             onClick={() => setModelDropdownOpen(!isModelDropdownOpen)}
@@ -70,7 +57,12 @@ export const ChatInput: React.FC<Props> = ({
                 transform: isModelDropdownOpen ? 'rotate(180deg)' : 'none',
               }}
             >
-              <path d="M1 1L8.5 8.5L16 1" stroke="#7588A3" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M1 1L8.5 8.5L16 1"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
             <span>{selectedModel.name}</span>
 
@@ -101,7 +93,7 @@ export const ChatInput: React.FC<Props> = ({
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
             <path
               d="M1 6.5H12M12 6.5L6.5 1M12 6.5L6.5 12"
-              stroke="#7588A3"
+              stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
             />
