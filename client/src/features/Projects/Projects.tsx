@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOS } from '@/core/os/OSContext';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink, Code } from 'lucide-react';
+import { ExternalLink, Code } from 'lucide-react';
 import { type Project, projectsData } from './projectsData';
 import './Projects.css';
 
@@ -10,7 +10,7 @@ const Projects = () => {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
 
   if (isMobile && activeProject) {
-    return <ProjectDetail project={activeProject} onBack={() => setActiveProject(null)} />;
+    return <ProjectDetail project={activeProject} />;
   }
 
   return (
@@ -107,31 +107,15 @@ const Projects = () => {
 
 interface ProjectDetailProps {
   project: Project;
-  onBack?: () => void;
 }
 
-export const ProjectDetail = ({ project, onBack }: ProjectDetailProps) => {
-  const { closeWindow } = useOS();
-
+export const ProjectDetail = ({ project }: ProjectDetailProps) => {
   const hasImage = !!project.image;
   const hasMedia = hasImage || !!project.githubUrl || !!project.demoUrl;
-
-  const handleBackClick = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      closeWindow(`project-${project.id}`);
-    }
-  };
 
   return (
     <div className="projects-container">
       <div className="project-detail-view">
-        <button className="project-detail-back" onClick={handleBackClick}>
-          <ArrowLeft size={16} />
-          <span>Back to Projects</span>
-        </button>
-
         <div
           className={`project-detail-layout ${!hasMedia ? 'project-detail-layout--no-media' : ''}`}
         >
