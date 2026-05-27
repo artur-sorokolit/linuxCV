@@ -14,7 +14,7 @@ export type WindowState = {
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [windows, setWindows] = useState<Record<string, WindowState>>({});
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
-  const [maxZIndex, setMaxZIndex] = useState(1);
+  const [maxZIndex, setMaxZIndex] = useState(10);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isAdmin, setIsAdminState] = useState<boolean>(() => {
     const urlParams = new URLSearchParams(window.location.search);
