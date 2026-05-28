@@ -1,6 +1,8 @@
 import React, { type RefObject } from 'react';
 import type { Message } from '@/features/Chat/chatTypes';
 import aiIcon from '@/shared/assets/icons/chat.svg';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type Props = {
   messages: Message[];
@@ -25,7 +27,11 @@ export const ChatMessages: React.FC<Props> = ({ messages, isLoading, messagesEnd
             <img src={aiIcon} alt="AI" />
           </div>
         )}
-        <div className={`chat-msg chat-msg--${msg.role}`}>{msg.content}</div>
+        <div className={`chat-msg chat-msg--${msg.role}`}>
+          <div className="chat-markdown">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          </div>
+        </div>
       </div>
     ))}
     {isLoading && (
