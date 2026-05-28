@@ -575,7 +575,6 @@
   background: rgba(9, 14, 25, 0.4) !important;
   border: 1px solid rgba(166, 81, 251, 0.15) !important;
   backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
   height: 100%;
 }
