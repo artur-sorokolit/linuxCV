@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: (process.env.CF_PAGES || process.env.BASE_PATH) ? '/' : '/linuxCV/',
+  base: process.env.CF_PAGES || process.env.BASE_PATH ? '/' : '/linuxCV/',
   plugins: [react()],
   resolve: {
     alias: {
