@@ -44,14 +44,23 @@ dev-server:
 server:
 	cd $(SERVER_DIR) && npm run dev
 
+# Load local environment variables for deployment/sync if .env exists
+ifneq (,$(wildcard ./.env))
+    include ./.env
+    export
+endif
+
 # Self-hosted: server + cloudflared tunnel + deploy
 .PHONY: start
 start:
 	./scripts/start-server.sh
 
-# Sync code to remote server laptop (excl node_modules, .git, production database and .env)
+# Sync code to remote server laptop securely
 .PHONY: sync
 sync:
+ifndef REMOTE_SSH_TARGET
+	$(error REMOTE_SSH_TARGET is not defined. Please create a root-level .env file with REMOTE_SSH_TARGET=user@host:dir)
+endif
 	rsync -avz --delete \
 		--exclude 'node_modules' \
 		--exclude '.git' \
@@ -59,7 +68,7 @@ sync:
 		--exclude '.env' \
 		--exclude 'data/database.sqlite' \
 		--exclude 'server/data/database.sqlite' \
-		./ artur@ssh.artur-sorokolit.uk:~/work/LinuxCV/
+		./ $(REMOTE_SSH_TARGET)
 
 # Production Build
 .PHONY: build
