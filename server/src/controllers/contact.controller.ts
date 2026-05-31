@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { contactService } from '../services/contact.service';
+import { emailService } from '../services/email.service';
 
 export const submitContactForm = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -10,6 +11,11 @@ export const submitContactForm = async (req: Request, res: Response, next: NextF
     }
 
     await contactService.saveMessage({ name, email, message });
+
+    emailService.sendContactNotification({ name, email, message }).catch((err) => {
+      console.error('Failed to send contact email notification:', err);
+    });
+
     res.status(201).json({ message: 'Form submitted successfully' });
   } catch (error) {
     next(error);
