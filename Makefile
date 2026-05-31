@@ -11,6 +11,7 @@ help:
 	@echo "  make dev          - Run client and server in development mode"
 	@echo "  make server       - Run only server"
 	@echo "  make start        - Start server + cloudflared tunnel + deploy client"
+	@echo "  make sync         - Sync local code to remote server laptop via SSH (Fast!)"
 	@echo "  make build        - Build client for production"
 	@echo "  make deploy       - Deploy client to GitHub Pages (runs lint first)"
 	@echo "  make lint         - Run linter for client and server"
@@ -47,6 +48,18 @@ server:
 .PHONY: start
 start:
 	./scripts/start-server.sh
+
+# Sync code to remote server laptop (excl node_modules, .git, production database and .env)
+.PHONY: sync
+sync:
+	rsync -avz --delete \
+		--exclude 'node_modules' \
+		--exclude '.git' \
+		--exclude 'dist' \
+		--exclude '.env' \
+		--exclude 'data/database.sqlite' \
+		--exclude 'server/data/database.sqlite' \
+		./ artur@ssh.artur-sorokolit.uk:~/work/LinuxCV/
 
 # Production Build
 .PHONY: build
