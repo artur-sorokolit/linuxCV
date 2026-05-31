@@ -68,37 +68,55 @@ make dev
 ### Available Commands
 
 ```bash
-make dev          # Run client + server in dev mode
+make dev          # Run client + server in dev mode (localhost)
 make server       # Run server only
+make start        # Self-hosted: Launch server + cloudflared tunnel
+make sync         # Sync local code to remote server laptop securely (via rsync over SSH)
 make build        # Build client for production
-make lint         # Run ESLint
 make deploy       # Build and deploy client to GitHub Pages
+make lint         # Run ESLint on client and server
 make clean        # Remove dist/ and node_modules/
 ```
 
 ### Environment Variables
+
+To run this project, you need to configure the following environment variables. Copy the `.env.example` files to `.env` in their respective directories.
 
 **Server** (`server/.env`):
 
 ```env
 PORT=5000
 DATABASE_URL=data/database.sqlite
-GEMINI_API_KEY=your_key_here
-OPENROUTER_API_KEY=your_key_here
-ADMIN_TOKEN=your_secret_token
+GEMINI_API_KEY=your_gemini_key
+OPENROUTER_API_KEY=your_openrouter_key
+ADMIN_TOKEN=your_secure_admin_token
+
+# Email notifications (Gmail SMTP Setup)
+GMAIL_USER=your_email@gmail.com
+GMAIL_APP_PASSWORD=your_16_character_app_password
 ```
 
 **Client** (`client/.env`):
 
 ```env
-VITE_API_URL=http://localhost:5000   # for local dev
-# VITE_API_URL=https://linuxcv.onrender.com  # for production
+VITE_API_URL=http://localhost:5000   # for local development
+# VITE_API_URL=https://api.yourdomain.com  # for production self-hosted backend
 ```
 
-## Deployment
+**Root** (`.env` - used for deployment sync):
 
-- **Client** → GitHub Pages via `gh-pages` package (`make deploy`)
-- **Server** → Render (<https://linuxcv.onrender.com>)
+```env
+REMOTE_SSH_TARGET=user@ssh.yourdomain.com:~/work/project-dir/
+```
+
+## Deployment Architecture
+
+The application is deployed using a modern, cost-effective hybrid infrastructure:
+
+- **Frontend (Client)**: Built locally and deployed to **Cloudflare Pages** or **GitHub Pages** for ultra-fast CDN delivery.
+- **Backend (Server) & Database (SQLite)**: Self-hosted on a private server (home laptop) exposed securely to the internet via **Cloudflare Zero Trust Tunnels**.
+- **Remote Administration**: Access control is secured using **Cloudflare Access (MFA/OTP)** protecting the SSH gateway, allowing secure administration globally.
+- **Continuous Deployment (Sync)**: Code changes are deployed from the developer's workstation to the remote server instantly using `make sync` (`rsync` over SSH tunnel).
 
 ## License
 
