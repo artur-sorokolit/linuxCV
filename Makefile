@@ -10,6 +10,7 @@ help:
 	@echo "  make install      - Install dependencies for all parts"
 	@echo "  make dev          - Run client and server in development mode"
 	@echo "  make server       - Run only server"
+	@echo "  make start        - Start server + cloudflared tunnel + deploy client"
 	@echo "  make build        - Build client for production"
 	@echo "  make deploy       - Deploy client to GitHub Pages (runs lint first)"
 	@echo "  make lint         - Run linter for client and server"
@@ -41,6 +42,11 @@ dev-server:
 .PHONY: server
 server:
 	cd $(SERVER_DIR) && npm run dev
+
+# Self-hosted: server + cloudflared tunnel + deploy
+.PHONY: start
+start:
+	./scripts/start-server.sh
 
 # Production Build
 .PHONY: build
