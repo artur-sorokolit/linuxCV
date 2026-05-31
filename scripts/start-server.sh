@@ -5,7 +5,7 @@ PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SERVER_DIR="$PROJECT_DIR/server"
 
 # Change this to your tunnel name (from 'cloudflared tunnel create')
-TUNNEL_NAME="linuxcv-api"
+TUNNEL_NAME="linux-api"
 
 echo "🚀 Starting LinuxCV server + Cloudflare tunnel..."
 

@@ -59,7 +59,9 @@ export class EmailService {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    console.log(`📧 Sending contact email notification from ${name} (${email}) to ${this.recipientEmail}...`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`🎉 Email sent successfully! Message ID: ${info.messageId}`);
   }
 }
 
