@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../types';
 
-export const errorHandler = (err: unknown, req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const errorHandler = (err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const error = err instanceof Error ? err : new Error(String(err));
   const status = (err as { status?: number }).status || 500;
 
