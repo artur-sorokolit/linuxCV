@@ -117,11 +117,55 @@ div.window--mobile[class*='window--'] {
 }
 
 .window--mobile .window-header {
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid var(--glass-border);
+  padding: 0.6rem 1rem;
+  background: rgba(9, 14, 25, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.window--mobile .window-controls {
-  flex-direction: row-reverse;
+.mobile-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.mobile-window-header__drag-handle {
+  width: 44px;
+  height: 5px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-window-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-window-control:active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  transform: scale(0.92);
+}
+
+.mobile-window-control--close:active {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+}
+
+.mobile-window-control--minimize:active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #3b82f6 !important;
 }

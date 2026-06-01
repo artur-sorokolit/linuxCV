@@ -23,13 +23,24 @@ export const Window: React.FC<WindowProps> = ({ id, children }) => {
       {isVisible && (
         <motion.div
           key={id}
-          drag={!isMobile && !isMaximized}
+          drag={isMobile ? 'y' : !isMaximized}
           dragMomentum={false}
-          dragConstraints={{
-            left: -initialX,
-            top: 28 - initialY,
-            right: window.innerWidth - (isMobile ? window.innerWidth : 420) - initialX,
-            bottom: window.innerHeight - (isMobile ? window.innerHeight : 300) - initialY,
+          dragElastic={isMobile ? { top: 0, bottom: 0.8 } : 0.5}
+          dragSnapToOrigin={isMobile}
+          dragConstraints={
+            isMobile
+              ? { top: 0, bottom: window.innerHeight }
+              : {
+                  left: -initialX,
+                  top: 28 - initialY,
+                  right: window.innerWidth - (isMobile ? window.innerWidth : 420) - initialX,
+                  bottom: window.innerHeight - (isMobile ? window.innerHeight : 300) - initialY,
+                }
+          }
+          onDragEnd={(_, info) => {
+            if (isMobile && info.offset.y > 120) {
+              toggleMinimize(id);
+            }
           }}
           onMouseDown={() => focusWindow(id)}
           initial={isMobile ? { y: '100%' } : { scale: 0.92, opacity: 0 }}
@@ -57,8 +68,71 @@ export const Window: React.FC<WindowProps> = ({ id, children }) => {
         >
           {/* Window Header */}
           <div className="window-header">
-            <div className="window-controls">
-              {isMobile ? (
+            {isMobile ? (
+              <div className="mobile-window-header">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMinimize(id);
+                  }}
+                  className="mobile-window-control mobile-window-control--minimize"
+                  aria-label="Minimize"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                <div className="mobile-window-header__drag-handle"></div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeWindow(id);
+                  }}
+                  className="mobile-window-control mobile-window-control--close"
+                  aria-label="Close"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="window-controls">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMinimize(id);
+                  }}
+                  className="window-control window-control--minimize"
+                  title="Minimize"
+                ></button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMaximize(id);
+                  }}
+                  className={`window-control ${isMaximized ? 'window-control--restore' : 'window-control--maximize'}`}
+                  title={isMaximized ? 'Restore' : 'Maximize'}
+                ></button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -67,35 +141,8 @@ export const Window: React.FC<WindowProps> = ({ id, children }) => {
                   className="window-control window-control--close"
                   title="Close"
                 ></button>
-              ) : (
-                <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMinimize(id);
-                    }}
-                    className="window-control window-control--minimize"
-                    title="Minimize"
-                  ></button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMaximize(id);
-                    }}
-                    className={`window-control ${isMaximized ? 'window-control--restore' : 'window-control--maximize'}`}
-                    title={isMaximized ? 'Restore' : 'Maximize'}
-                  ></button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeWindow(id);
-                    }}
-                    className="window-control window-control--close"
-                    title="Close"
-                  ></button>
-                </>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Window Content */}

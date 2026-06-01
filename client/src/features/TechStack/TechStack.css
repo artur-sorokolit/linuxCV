@@ -4,6 +4,9 @@
   flex-direction: column;
   gap: 16px;
   max-height: 600px;
+  width: 540px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .tech-stack__header {
@@ -101,7 +104,19 @@
   border-radius: 83px;
   font-family: 'Inter', sans-serif;
   font-size: 13px;
+  color: #cbd5e1;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.tech-stack-card__tag:hover {
+  background: #1e293b;
+  border-color: var(--category-color, #3c83f6);
   color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    0 0 8px var(--category-color, #3c83f6);
 }
 
 @media (max-width: 767px) {

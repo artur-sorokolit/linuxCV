@@ -14,7 +14,11 @@ const TechStack = () => {
       </div>
       <div className="tech-stack__categories">
         {techStackData.map((category, i) => (
-          <div className="tech-stack-card" key={i}>
+          <div
+            className="tech-stack-card"
+            key={i}
+            style={{ '--category-color': category.color } as React.CSSProperties}
+          >
             <div className="tech-stack-card__header">
               <div className="tech-stack-card__marker" style={{ background: category.color }}></div>
               <h3 className="tech-stack-card__title">{category.title}</h3>

@@ -18,7 +18,8 @@ export const submitContactForm = async (req: Request, res: Response, next: NextF
     console.log('✅ Message successfully saved to database.');
 
     // Send email notification (non-blocking)
-    emailService.sendContactNotification({ name, email, message })
+    emailService
+      .sendContactNotification({ name, email, message })
       .then(() => {
         console.log('✨ Email notification process completed.');
       })
