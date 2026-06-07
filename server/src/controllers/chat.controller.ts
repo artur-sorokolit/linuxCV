@@ -14,9 +14,7 @@ export const handleChat = async (req: Request, res: Response, next: NextFunction
     const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp;
     const userAgent = req.headers['user-agent'] || 'Unknown';
 
-    console.log(
-      `💬 [CHAT] IP: ${ip} | User-Agent: ${userAgent} | Session: ${sessionId} | Message: "${message}"`
-    );
+    console.log(`💬 [CHAT] IP: ${ip} | User-Agent: ${userAgent} | Message: "${message}"`);
 
     const reply = await chatService.processMessage(message, sessionId, model);
     res.json({ reply });
