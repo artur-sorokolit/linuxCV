@@ -9,6 +9,15 @@ export const handleChat = async (req: Request, res: Response, next: NextFunction
       return res.status(400).json({ error: 'Message, sessionId, and model are required' });
     }
 
+    const rawIp =
+      req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp;
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+
+    console.log(
+      `💬 [CHAT] IP: ${ip} | User-Agent: ${userAgent} | Session: ${sessionId} | Message: "${message}"`
+    );
+
     const reply = await chatService.processMessage(message, sessionId, model);
     res.json({ reply });
   } catch (error) {

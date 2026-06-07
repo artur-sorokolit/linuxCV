@@ -18,7 +18,7 @@ export class OpenRouterService implements LLMProvider {
         ...history,
         { role: 'user', content: message },
       ];
-      console.log('Sending messages to OpenRouter:', JSON.stringify(messages, null, 2));
+      console.log(`🤖 Sending request to OpenRouter (model: ${model || llmConfig.model})...`);
 
       const response = await axios.post(
         this.apiUrl,
