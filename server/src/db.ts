@@ -68,6 +68,25 @@ class DatabaseService {
     `
     );
 
+    await this.applyMigration(
+      db,
+      '002_chat_logs',
+      `
+      CREATE TABLE IF NOT EXISTS chat_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT,
+        ip TEXT,
+        user_agent TEXT,
+        model TEXT,
+        used_model TEXT,
+        message TEXT NOT NULL,
+        reply TEXT,
+        error TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+    );
+
     const columns = await db.all('PRAGMA table_info(chat_history)');
     const hasSessionId = columns.some((col: { name: string }) => col.name === 'session_id');
     if (!hasSessionId) {

@@ -16,7 +16,10 @@ export const handleChat = async (req: Request, res: Response, next: NextFunction
 
     console.log(`💬 [CHAT] IP: ${ip} | User-Agent: ${userAgent} | Message: "${message}"`);
 
-    const reply = await chatService.processMessage(message, sessionId, model);
+    const { reply, modelUsed } = await chatService.processMessage(message, sessionId, model, ip, userAgent);
+
+    console.log(`🤖 [CHAT RESPONSE] IP: ${ip} | Model Used: ${modelUsed} | Reply: "${reply.slice(0, 100)}${reply.length > 100 ? '...' : ''}"`);
+
     res.json({ reply });
   } catch (error) {
     next(error);

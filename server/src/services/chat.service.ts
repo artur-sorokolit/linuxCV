@@ -44,26 +44,65 @@ export class ChatService {
     }));
   }
 
-  async processMessage(message: string, sessionId: string, model: string) {
+  async processMessage(
+    message: string,
+    sessionId: string,
+    model: string,
+    ip?: string,
+    userAgent?: string
+  ): Promise<{ reply: string; modelUsed: string }> {
     const db = await getDb();
     const history = await this.getHistory(sessionId);
-    const reply = await this.llmProvider.chat(message, history, model);
-    await db.run('INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)', [
-      sessionId,
-      'user',
-      message,
-    ]);
-    await db.run('INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)', [
-      sessionId,
-      'assistant',
-      reply,
-    ]);
-    if (history.length === 0) {
-      const title = message.slice(0, 30) + (message.length > 30 ? '...' : '');
-      await db.run('UPDATE chat_sessions SET title = ? WHERE id = ?', [title, sessionId]);
-    }
 
-    return reply;
+    let reply = '';
+    let modelUsed = model;
+    let errorMsg: string | null = null;
+
+    try {
+      const result = await this.llmProvider.chat(message, history, model);
+      reply = result.reply;
+      modelUsed = result.modelUsed;
+
+      await db.run('INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)', [
+        sessionId,
+        'user',
+        message,
+      ]);
+      await db.run('INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)', [
+        sessionId,
+        'assistant',
+        reply,
+      ]);
+
+      if (history.length === 0) {
+        const title = message.slice(0, 30) + (message.length > 30 ? '...' : '');
+        await db.run('UPDATE chat_sessions SET title = ? WHERE id = ?', [title, sessionId]);
+      }
+
+      return { reply, modelUsed };
+    } catch (error: unknown) {
+      errorMsg = error instanceof Error ? error.message : String(error);
+      throw error;
+    } finally {
+      try {
+        await db.run(
+          `INSERT INTO chat_logs (session_id, ip, user_agent, model, used_model, message, reply, error)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            sessionId,
+            ip || null,
+            userAgent || null,
+            model,
+            modelUsed,
+            message,
+            reply || null,
+            errorMsg,
+          ]
+        );
+      } catch (logError) {
+        console.error('🔴 Failed to write to chat_logs:', logError);
+      }
+    }
   }
 }
 

@@ -3,11 +3,53 @@ import { LLMProvider, ChatMessage } from '../../types';
 import { config } from '../../config/env';
 import { llmConfig } from '../../config/llm';
 
+const FALLBACK_MODELS = [
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'google/gemma-4-31b-it:free',
+  'qwen/qwen3-coder:free',
+  'nousresearch/hermes-3-llama-3.1-405b:free',
+  'openai/gpt-oss-120b:free',
+  'meta-llama/llama-3.2-3b-instruct:free',
+];
+
 export class OpenRouterService implements LLMProvider {
   private readonly apiKey = config.openrouterApiKey;
   private readonly apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-  async chat(message: string, history: ChatMessage[], model?: string): Promise<string> {
+  async chat(
+    message: string,
+    history: ChatMessage[],
+    model?: string
+  ): Promise<{ reply: string; modelUsed: string }> {
+    const selectedModel = model || llmConfig.model;
+    const modelsToTry = [
+      selectedModel,
+      ...FALLBACK_MODELS.filter((m) => m !== selectedModel),
+    ];
+
+    let lastError: unknown = null;
+
+    for (const currentModel of modelsToTry) {
+      try {
+        const reply = await this.sendRequest(message, history, currentModel);
+        return { reply, modelUsed: currentModel };
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `⚠️ Failed to chat with model ${currentModel}. Error: ${errMsg}. Trying fallback...`
+        );
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('All fallback models failed to respond.');
+  }
+
+  private async sendRequest(
+    message: string,
+    history: ChatMessage[],
+    model: string
+  ): Promise<string> {
     if (!this.apiKey) {
       throw new Error('OpenRouter API key is not configured');
     }
@@ -18,12 +60,12 @@ export class OpenRouterService implements LLMProvider {
         ...history,
         { role: 'user', content: message },
       ];
-      console.log(`🤖 Sending request to OpenRouter (model: ${model || llmConfig.model})...`);
+      console.log(`🤖 Sending request to OpenRouter (model: ${model})...`);
 
       const response = await axios.post(
         this.apiUrl,
         {
-          model: model || llmConfig.model,
+          model: model,
           messages,
           temperature: llmConfig.temperature,
           max_tokens: llmConfig.maxTokens,

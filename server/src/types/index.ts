@@ -23,7 +23,11 @@ export interface LLMResponse {
 }
 
 export interface LLMProvider {
-  chat(message: string, history: ChatMessage[], model?: string): Promise<string>;
+  chat(
+    message: string,
+    history: ChatMessage[],
+    model?: string
+  ): Promise<{ reply: string; modelUsed: string }>;
 }
 
 export interface ApiError {
