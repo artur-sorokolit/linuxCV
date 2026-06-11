@@ -1,7 +1,7 @@
 import { buildSystemPrompt } from '../services/prompt.service';
 
 export const llmConfig = {
-  model: 'z-ai/glm-4.5-air:free',
+  model: 'meta-llama/llama-3.3-70b-instruct:free',
   get systemPrompt(): string {
     return buildSystemPrompt();
   },

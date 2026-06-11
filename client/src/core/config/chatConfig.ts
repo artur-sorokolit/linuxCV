@@ -7,15 +7,27 @@ export type ChatModel = {
 
 export const AVAILABLE_MODELS: ChatModel[] = [
   {
-    id: 'z-ai/glm-4.5-air:free',
-    name: 'GLM 4.5 Air (Fast)',
-    provider: 'Zhipu',
+    id: 'meta-llama/llama-3.3-70b-instruct:free',
+    name: 'Llama 3.3 70B',
+    provider: 'Meta',
     isFree: true,
   },
   {
-    id: 'tencent/hy3-preview:free',
-    name: 'Hunyuan 3 Preview',
-    provider: 'Tencent',
+    id: 'google/gemma-4-31b-it:free',
+    name: 'Gemma 4 31B',
+    provider: 'Google',
+    isFree: true,
+  },
+  {
+    id: 'qwen/qwen3-coder:free',
+    name: 'Qwen 3 Coder',
+    provider: 'Qwen',
+    isFree: true,
+  },
+  {
+    id: 'nousresearch/hermes-3-llama-3.1-405b:free',
+    name: 'Hermes 3 405B',
+    provider: 'Nous',
     isFree: true,
   },
   {
@@ -32,26 +44,14 @@ export const AVAILABLE_MODELS: ChatModel[] = [
   },
   {
     id: 'nvidia/nemotron-3-super-120b-a12b:free',
-    name: 'Nemotron 3 Super 120B',
+    name: 'Nemotron 3 Super',
     provider: 'NVIDIA',
     isFree: true,
   },
   {
-    id: 'nvidia/nemotron-3-nano-30b-a3b:free',
-    name: 'Nemotron 3 Nano 30B',
-    provider: 'NVIDIA',
-    isFree: true,
-  },
-  {
-    id: 'nvidia/nemotron-nano-12b-v2-vl:free',
-    name: 'Nemotron Nano 12B VL',
-    provider: 'NVIDIA',
-    isFree: true,
-  },
-  {
-    id: 'nvidia/nemotron-nano-9b-v2:free',
-    name: 'Nemotron Nano 9B',
-    provider: 'NVIDIA',
+    id: 'meta-llama/llama-3.2-3b-instruct:free',
+    name: 'Llama 3.2 3B',
+    provider: 'Meta',
     isFree: true,
   },
 ];
