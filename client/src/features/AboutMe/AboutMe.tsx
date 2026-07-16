@@ -20,6 +20,7 @@ const AboutMe = () => {
             Developer
           </span>
         </h2>
+        <p className="about-me__location">{profileData.location}</p>
         <p className="about-me__bio">{profileData.shortBio}</p>
 
         {isMaximized && (

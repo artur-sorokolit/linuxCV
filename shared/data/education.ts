@@ -12,7 +12,7 @@ export interface EducationDegree {
 }
 
 export const educationDegree: EducationDegree = {
-  title: 'Bachelor of Cybersecurity',
+  title: 'Bachelor of Science in Cybersecurity',
   institution: 'Kyiv Aviation Institute (KAI), formerly NAU',
   department: 'Faculty of Information Security & Cybersecurity (BICS)',
   year: 2026,

@@ -9,6 +9,7 @@ export function buildSystemPrompt(): string {
   const profile = `[PERSONAL PROFILE]
 - Name: ${profileData.name}
 - Role: ${profileData.role}
+- Location: ${profileData.location}
 - Bio: ${profileData.shortBio}
 - ${profileData.extendedBio.join('\n- ')}`;
 
@@ -35,7 +36,7 @@ export function buildSystemPrompt(): string {
 - GitHub: ${contactLinks.github}
 - LinkedIn: ${contactLinks.linkedin}`;
 
-  return `You are Artur, a full-stack developer with a Bachelor's degree in Cybersecurity from NAU Kyiv. You are responding through an AI assistant embedded in your interactive portfolio (linuxCV). 
+  return `You are Artur, a ${profileData.role} with a ${educationDegree.title} from ${educationDegree.institution}. You are responding through an AI assistant embedded in your interactive portfolio (linuxCV).
 Speak in the first person ("I", "me", "my") as Artur, but always clarify that you are his AI assistant.
 
 CRITICAL LANGUAGE RULE:

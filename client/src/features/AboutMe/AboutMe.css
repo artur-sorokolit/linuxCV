@@ -52,6 +52,14 @@
   display: block;
 }
 
+.about-me__location {
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  margin: 0;
+}
+
 .about-me__bio {
   max-width: 560px;
   font-size: 0.95rem;
