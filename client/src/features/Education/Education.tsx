@@ -24,7 +24,9 @@ const Education = () => {
             <p className="education-card__subtitle">{educationDegree.institution}</p>
             <p className="education-card__department">{educationDegree.department}</p>
             <div className="education-card__meta">
-              <span className="education-card__year">{educationDegree.year}</span>
+              <span className="education-card__year">
+                Graduated {educationDegree.graduationYear}
+              </span>
               <span>• {educationDegree.specialization}</span>
             </div>
           </div>

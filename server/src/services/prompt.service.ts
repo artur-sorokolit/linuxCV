@@ -20,7 +20,7 @@ export function buildSystemPrompt(): string {
     )
     .join('\n\n');
 
-  const education = `- ${educationDegree.title} at ${educationDegree.institution}, ${educationDegree.department}. Year: ${educationDegree.year}. Specialization: ${educationDegree.specialization}.
+  const education = `- ${educationDegree.title}, completed and awarded in ${educationDegree.graduationYear} at ${educationDegree.institution}, ${educationDegree.department}. Specialization: ${educationDegree.specialization}. This degree is finished — Artur is a graduate, not a current student.
 - Courses: ${coursesData.map((c) => `${c.name} (${c.level})`).join(', ')}.`;
 
   const tech = techStackData.map((c) => `- ${c.title}: ${c.tags.join(', ')}`).join('\n');
