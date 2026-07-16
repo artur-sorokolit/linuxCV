@@ -22,6 +22,13 @@ export interface LLMResponse {
   reply: string;
 }
 
+export interface ChatModel {
+  id: string;
+  name: string;
+  provider: string;
+  contextLength: number;
+}
+
 export interface LLMProvider {
   chat(
     message: string,

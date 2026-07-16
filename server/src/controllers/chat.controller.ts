@@ -1,5 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { chatService } from '../services/chat.service';
+import { modelsService } from '../services/llm/models.service';
+
+export const getModels = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json(await modelsService.getAvailable());
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const handleChat = async (req: Request, res: Response, next: NextFunction) => {
   try {

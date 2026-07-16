@@ -2,15 +2,27 @@ import axios from 'axios';
 import { LLMProvider, ChatMessage } from '../../types';
 import { config } from '../../config/env';
 import { llmConfig } from '../../config/llm';
+import { modelsService } from './models.service';
 
-const FALLBACK_MODELS = [
-  'meta-llama/llama-3.3-70b-instruct:free',
-  'google/gemma-4-31b-it:free',
-  'qwen/qwen3-coder:free',
-  'nousresearch/hermes-3-llama-3.1-405b:free',
-  'openai/gpt-oss-120b:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
-];
+/** How many models to try before giving up, so one request can't walk the whole catalog. */
+const MAX_ATTEMPTS = 4;
+
+interface RateLimitInfo {
+  isRateLimit: boolean;
+  retryAfterSeconds?: number;
+}
+
+const readRateLimit = (error: unknown): RateLimitInfo => {
+  if (!axios.isAxiosError(error) || error.response?.status !== 429) {
+    return { isRateLimit: false };
+  }
+  const metadata = error.response?.data?.error?.metadata;
+  const retryAfter = Number(metadata?.retry_after_seconds ?? metadata?.headers?.['Retry-After']);
+  return {
+    isRateLimit: true,
+    retryAfterSeconds: Number.isFinite(retryAfter) ? retryAfter : undefined,
+  };
+};
 
 export class OpenRouterService implements LLMProvider {
   private readonly apiKey = config.openrouterApiKey;
@@ -21,28 +33,46 @@ export class OpenRouterService implements LLMProvider {
     history: ChatMessage[],
     model?: string
   ): Promise<{ reply: string; modelUsed: string }> {
-    const selectedModel = model || llmConfig.model;
-    const modelsToTry = [
-      selectedModel,
-      ...FALLBACK_MODELS.filter((m) => m !== selectedModel),
-    ];
-
+    const candidates = await this.buildCandidates(model);
     let lastError: unknown = null;
+    let allRateLimited = candidates.length > 0;
 
-    for (const currentModel of modelsToTry) {
+    for (const currentModel of candidates) {
       try {
         const reply = await this.sendRequest(message, history, currentModel);
         return { reply, modelUsed: currentModel };
       } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : String(error);
+        const { isRateLimit, retryAfterSeconds } = readRateLimit(error);
+        if (isRateLimit) {
+          // Remember it so neither the fallback nor the model picker offers it again yet.
+          modelsService.markRateLimited(currentModel, retryAfterSeconds);
+        } else {
+          allRateLimited = false;
+        }
         console.warn(
-          `⚠️ Failed to chat with model ${currentModel}. Error: ${errMsg}. Trying fallback...`
+          `⚠️ Model ${currentModel} failed: ${error instanceof Error ? error.message : String(error)}`
         );
         lastError = error;
       }
     }
 
-    throw lastError || new Error('All fallback models failed to respond.');
+    if (allRateLimited) {
+      const limitErr = new Error(
+        'The free models are all busy right now. Please try again in a moment.'
+      );
+      Object.assign(limitErr, { code: 'RATE_LIMIT_EXCEEDED', status: 429 });
+      throw limitErr;
+    }
+    throw lastError || new Error('No free model was able to respond.');
+  }
+
+  /** Requested model first, then live free models that are not cooling down. */
+  private async buildCandidates(requested?: string): Promise<string[]> {
+    const available = await modelsService.getAvailable().catch(() => []);
+    const ordered = available.map((m) => m.id);
+    const preferred = requested || llmConfig.model;
+    const candidates = [preferred, ...ordered.filter((id) => id !== preferred)];
+    return candidates.slice(0, MAX_ATTEMPTS);
   }
 
   private async sendRequest(
@@ -54,18 +84,18 @@ export class OpenRouterService implements LLMProvider {
       throw new Error('OpenRouter API key is not configured');
     }
 
-    try {
-      const messages = [
-        { role: 'system', content: llmConfig.systemPrompt },
-        ...history,
-        { role: 'user', content: message },
-      ];
-      console.log(`🤖 Sending request to OpenRouter (model: ${model})...`);
+    const messages = [
+      { role: 'system', content: llmConfig.systemPrompt },
+      ...history,
+      { role: 'user', content: message },
+    ];
+    console.log(`🤖 Sending request to OpenRouter (model: ${model})...`);
 
+    try {
       const response = await axios.post(
         this.apiUrl,
         {
-          model: model,
+          model,
           messages,
           temperature: llmConfig.temperature,
           max_tokens: llmConfig.maxTokens,
@@ -74,31 +104,30 @@ export class OpenRouterService implements LLMProvider {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://linuxcv.dev',
+            'HTTP-Referer': 'https://artur-sorokolit.uk',
             'X-Title': 'linuxCV',
           },
+          timeout: 60000,
         }
       );
 
-      return response.data.choices?.[0]?.message?.content || 'No response from AI.';
+      const reply = response.data.choices?.[0]?.message?.content;
+      if (!reply) {
+        // Reasoning models can spend the whole budget before emitting an answer.
+        throw new Error(`Model ${model} returned an empty response`);
+      }
+      return reply;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
         const data = error.response?.data;
 
-        if (status === 429) {
-          const limitErr = new Error(
-            'Rate limit reached for this model. Please try another model or wait a moment.'
-          );
-          Object.assign(limitErr, { code: 'RATE_LIMIT_EXCEEDED', status: 429 });
-          throw limitErr;
-        }
         if (status === 401) {
           const authErr = new Error('Invalid API Key. Please check your OpenRouter configuration.');
           Object.assign(authErr, { code: 'AUTH_ERROR', status: 401 });
           throw authErr;
         }
-        if (data?.error?.message) {
+        if (status !== 429 && data?.error?.message) {
           throw new Error(`OpenRouter Error: ${data.error.message}`);
         }
       }

@@ -13,6 +13,7 @@ export type ApiError = {
 export const Chat = () => {
   const {
     messages,
+    models,
     selectedModel,
     isLoading,
     input,
@@ -69,6 +70,7 @@ export const Chat = () => {
           suggestions={activeSuggestions}
           isModelDropdownOpen={isModelDropdownOpen}
           setModelDropdownOpen={setModelDropdownOpen}
+          models={models}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
           isLoading={isLoading}

@@ -1,7 +1,9 @@
 import { buildSystemPrompt } from '../services/prompt.service';
 
 export const llmConfig = {
-  model: 'meta-llama/llama-3.3-70b-instruct:free',
+  // OpenRouter's own router over the free models: it picks whichever one is
+  // actually serving, which no pinned free model can promise.
+  model: 'openrouter/free',
   get systemPrompt(): string {
     return buildSystemPrompt();
   },

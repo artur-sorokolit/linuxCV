@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/core/config/api';
+import type { ChatModel } from '@/core/config/chatConfig';
 import type { ApiError, ChatSession, Message } from './Chat';
 
 async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
@@ -14,6 +15,10 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
   }
   return data as T;
 }
+
+export const fetchModels = async (): Promise<ChatModel[]> => {
+  return request<ChatModel[]>('/api/chat/models');
+};
 
 export const fetchSessions = async (): Promise<ChatSession[]> => {
   return request<ChatSession[]>('/api/chat/sessions');

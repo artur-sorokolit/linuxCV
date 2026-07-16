@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
-import { AVAILABLE_MODELS, type ChatModel } from '@/core/config/chatConfig';
+import { FALLBACK_MODEL, type ChatModel } from '@/core/config/chatConfig';
 import type { Message, ChatSession } from './chatTypes';
 import * as api from './chatApi';
 
@@ -7,6 +7,7 @@ type State = {
   messages: Message[];
   sessions: ChatSession[];
   currentSessionId: string | null;
+  models: ChatModel[];
   selectedModel: ChatModel;
   isLoading: boolean;
 };
@@ -17,6 +18,7 @@ type Action =
   | { type: 'SET_CURRENT_SESSION'; payload: string }
   | { type: 'SET_MESSAGES'; payload: Message[] }
   | { type: 'APPEND_MESSAGE'; payload: Message }
+  | { type: 'SET_MODELS'; payload: ChatModel[] }
   | { type: 'SET_MODEL'; payload: ChatModel }
   | { type: 'SET_LOADING'; payload: boolean };
 
@@ -24,7 +26,8 @@ const initialState: State = {
   messages: [],
   sessions: [],
   currentSessionId: null,
-  selectedModel: AVAILABLE_MODELS[0],
+  models: [FALLBACK_MODEL],
+  selectedModel: FALLBACK_MODEL,
   isLoading: false,
 };
 
@@ -40,6 +43,14 @@ function reducer(state: State, action: Action): State {
       return { ...state, messages: action.payload };
     case 'APPEND_MESSAGE':
       return { ...state, messages: [...state.messages, action.payload] };
+    case 'SET_MODELS': {
+      if (action.payload.length === 0) {
+        return state;
+      }
+      // The server leads with its default, and keeps any pick the user already made.
+      const stillOffered = action.payload.find((m) => m.id === state.selectedModel.id);
+      return { ...state, models: action.payload, selectedModel: stillOffered || action.payload[0] };
+    }
     case 'SET_MODEL':
       return { ...state, selectedModel: action.payload };
     case 'SET_LOADING':
@@ -93,6 +104,12 @@ export const useChatService = () => {
       .fetchSessions()
       .then((data) => dispatch({ type: 'SET_SESSIONS', payload: data }))
       .catch((e) => console.error('Failed to fetch sessions:', e));
+
+    api
+      .fetchModels()
+      .then((data) => dispatch({ type: 'SET_MODELS', payload: data }))
+      // On failure the fallback model stays, so the chat still works.
+      .catch((e) => console.error('Failed to fetch models:', e));
   }, []);
 
   const startNewChat = useCallback(
@@ -117,8 +134,10 @@ export const useChatService = () => {
         const history = await api.fetchSessionHistory(sessionId);
         const session = state.sessions.find((s) => s.id === sessionId);
         if (session) {
-          const model = AVAILABLE_MODELS.find((m) => m.id === session.model) || AVAILABLE_MODELS[0];
-          dispatch({ type: 'SET_MODEL', payload: model });
+          const model = state.models.find((m) => m.id === session.model);
+          if (model) {
+            dispatch({ type: 'SET_MODEL', payload: model });
+          }
         }
         dispatch({ type: 'SET_MESSAGES', payload: history });
         dispatch({ type: 'SET_CURRENT_SESSION', payload: sessionId });
@@ -127,7 +146,7 @@ export const useChatService = () => {
         console.error('Failed to load session:', e);
       }
     },
-    [state.sessions]
+    [state.sessions, state.models]
   );
 
   const [input, setInput] = useState('');
@@ -199,6 +218,7 @@ export const useChatService = () => {
     messages: state.messages,
     sessions: state.sessions,
     currentSessionId: state.currentSessionId,
+    models: state.models,
     selectedModel: state.selectedModel,
     isLoading: state.isLoading,
     input,

@@ -1,5 +1,5 @@
 import React, { type Dispatch, type SetStateAction } from 'react';
-import { AVAILABLE_MODELS, type ChatModel } from '@/core/config/chatConfig';
+import { type ChatModel } from '@/core/config/chatConfig';
 
 type Props = {
   input: string;
@@ -9,6 +9,7 @@ type Props = {
   suggestions: string[];
   isModelDropdownOpen: boolean;
   setModelDropdownOpen: Dispatch<SetStateAction<boolean>>;
+  models: ChatModel[];
   selectedModel: ChatModel;
   setSelectedModel: (model: ChatModel) => void;
   isLoading: boolean;
@@ -23,6 +24,7 @@ export const ChatInput: React.FC<Props> = ({
   suggestions,
   isModelDropdownOpen,
   setModelDropdownOpen,
+  models,
   selectedModel,
   setSelectedModel,
   isLoading,
@@ -72,7 +74,7 @@ export const ChatInput: React.FC<Props> = ({
 
             {isModelDropdownOpen && (
               <div className="chat-model-dropdown">
-                {AVAILABLE_MODELS.map((model) => (
+                {models.map((model) => (
                   <div
                     key={model.id}
                     className={`chat-model-option ${selectedModel.id === model.id ? 'active' : ''}`}
@@ -83,9 +85,7 @@ export const ChatInput: React.FC<Props> = ({
                     }}
                   >
                     <div className="model-name">{model.name}</div>
-                    <div className="model-provider">
-                      {model.provider} {model.isFree && '(Free)'}
-                    </div>
+                    <div className="model-provider">{model.provider}</div>
                   </div>
                 ))}
               </div>
