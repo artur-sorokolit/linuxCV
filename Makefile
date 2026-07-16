@@ -18,8 +18,8 @@ help:
 	@echo "  make format       - Run formatter for client and server"
 	@echo "  make format-check - Check formatting for client and server"
 	@echo "  make clean        - Remove build artifacts and node_modules"
-	@echo "  make docker-up    - Start docker containers (future)"
-	@echo "  make docker-down  - Stop docker containers (future)"
+	@echo "  make up    	   - Start local Postgres for development"
+	@echo "  make down         - Stop local Postgres"
 
 # Installation
 .PHONY: install
@@ -109,13 +109,14 @@ clean:
 	rm -rf $(CLIENT_DIR)/dist
 	rm -rf $(CLIENT_DIR)/node_modules
 
-# Docker (Placeholders for future backend/db)
-.PHONY: docker-up
-docker-up:
-	@echo "Starting Docker containers..."
-	# $(DOCKER_COMPOSE) up -d
+# Local Postgres for development
+.PHONY: up
+up:
+	@echo "Starting local Postgres..."
+	$(DOCKER_COMPOSE) up -d
+	@echo "Postgres ready on postgresql://linuxcv:linuxcv@localhost:5432/linuxcv"
 
-.PHONY: docker-down
-docker-down:
-	@echo "Stopping Docker containers..."
-	# $(DOCKER_COMPOSE) down
+.PHONY: down
+down:
+	@echo "Stopping local Postgres..."
+	$(DOCKER_COMPOSE) down

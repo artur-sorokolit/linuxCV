@@ -34,19 +34,18 @@ linuxCV/
 │       ├── ui/      # Window, DesktopIcon, Taskbar, TopBar
 │       ├── features/# AboutMe, Experience, Chat, Contact, Admin
 │       └── config/  # App registry
-├── server/          # Express 5 + TypeScript + SQLite
-│   └── src/
-│       ├── routes/  # /api/contact, /api/chat, /api/admin
-│       ├── controllers/
-│       └── services/
-└── data/            # SQLite database
+└── server/          # Express 5 + TypeScript + Postgres
+    └── src/
+        ├── routes/  # /api/contact, /api/chat, /api/admin
+        ├── controllers/
+        └── services/
 ```
 
 ## Tech Stack
 
 **Client:** React 19 · TypeScript · Vite · Framer Motion · Lucide React · Vanilla CSS
 
-**Server:** Express 5 · TypeScript · SQLite · Gemini API · OpenRouter
+**Server:** Express 5 · TypeScript · Postgres (Neon) · OpenRouter
 
 ## Getting Started
 
@@ -86,7 +85,9 @@ To run this project, you need to configure the following environment variables. 
 
 ```env
 PORT=5000
-DATABASE_URL=data/database.sqlite
+DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+DATABASE_SSL=true            # set to false for a local Postgres without TLS
+CORS_ORIGINS=https://artur-sorokolit.uk,http://localhost:5173
 GEMINI_API_KEY=your_gemini_key
 OPENROUTER_API_KEY=your_openrouter_key
 ADMIN_TOKEN=your_secure_admin_token
@@ -95,6 +96,8 @@ ADMIN_TOKEN=your_secure_admin_token
 GMAIL_USER=your_email@gmail.com
 GMAIL_APP_PASSWORD=your_16_character_app_password
 ```
+
+`CORS_ORIGINS` is a comma-separated allowlist of browser origins. Leave it empty to allow any origin (local development only).
 
 **Client** (`client/.env`):
 
@@ -111,12 +114,19 @@ REMOTE_SSH_TARGET=user@ssh.yourdomain.com:~/work/project-dir/
 
 ## Deployment Architecture
 
-The application is deployed using a modern, cost-effective hybrid infrastructure:
+The application runs entirely on free tiers:
 
-- **Frontend (Client)**: Built locally and deployed to **Cloudflare Pages** or **GitHub Pages** for ultra-fast CDN delivery.
-- **Backend (Server) & Database (SQLite)**: Self-hosted on a private server (home laptop) exposed securely to the internet via **Cloudflare Zero Trust Tunnels**.
-- **Remote Administration**: Access control is secured using **Cloudflare Access (MFA/OTP)** protecting the SSH gateway, allowing secure administration globally.
-- **Continuous Deployment (Sync)**: Code changes are deployed from the developer's workstation to the remote server instantly using `make sync` (`rsync` over SSH tunnel).
+- **Frontend (Client)**: Built and served via **Cloudflare** at <https://artur-sorokolit.uk> (also mirrored to GitHub Pages).
+- **Backend (Server)**: **Render** free web service, built from `render.yaml` at the repo root. Free instances spin down after 15 minutes of inactivity and take roughly a minute to wake up.
+- **Database**: **Neon** free Postgres. Schema is created automatically on boot by the migration runner in `server/src/db.ts`.
+- **API domain**: `api.artur-sorokolit.uk` is a CNAME to the Render service, so the client's `VITE_API_URL` never changes.
+
+### Deploying the backend
+
+1. Create a Neon project and copy its pooled connection string.
+2. On Render, create a Blueprint from this repo — `render.yaml` defines the service.
+3. Set the secrets marked `sync: false` in the Render dashboard: `DATABASE_URL`, `CORS_ORIGINS`, `OPENROUTER_API_KEY`, `ADMIN_TOKEN`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`.
+4. Point `api.artur-sorokolit.uk` at the Render service and add it as a custom domain there.
 
 ## License
 

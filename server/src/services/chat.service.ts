@@ -34,11 +34,11 @@ export class ChatService {
 
   async getHistory(sessionId: string): Promise<ChatMessage[]> {
     const db = await getDb();
-    const rows = await db.all(
+    const rows = await db.all<{ role: 'user' | 'assistant' | 'system'; content: string }>(
       'SELECT role, content FROM chat_history WHERE session_id = ? ORDER BY created_at ASC',
       [sessionId]
     );
-    return rows.map((row: { role: 'user' | 'assistant' | 'system'; content: string }) => ({
+    return rows.map((row) => ({
       role: row.role,
       content: row.content,
     }));
