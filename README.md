@@ -2,7 +2,7 @@
 
 An interactive portfolio/.resume that simulates a Linux-like desktop environment right in your browser — complete with draggable windows, a taskbar, glassmorphism effects, and AI-powered chat.
 
-Live demo: <https://cllown.github.io/linuxCV/>
+Live demo: [https://cllown.github.io/linuxCV/](https://cllown.github.io/linuxCV/)
 
 ## Features
 
@@ -90,7 +90,6 @@ DATABASE_SSL=true            # set to false for a local Postgres without TLS
 CORS_ORIGINS=https://artur-sorokolit.uk,http://localhost:5173
 GEMINI_API_KEY=your_gemini_key
 OPENROUTER_API_KEY=your_openrouter_key
-ADMIN_TOKEN=your_secure_admin_token
 
 # Email notifications (Gmail SMTP Setup)
 GMAIL_USER=your_email@gmail.com
@@ -116,7 +115,7 @@ REMOTE_SSH_TARGET=user@ssh.yourdomain.com:~/work/project-dir/
 
 The application runs entirely on free tiers:
 
-- **Frontend (Client)**: Built and served via **Cloudflare** at <https://artur-sorokolit.uk> (also mirrored to GitHub Pages).
+- **Frontend (Client)**: Built and served via **Cloudflare** at [https://artur-sorokolit.uk](https://artur-sorokolit.uk) (also mirrored to GitHub Pages).
 - **Backend (Server)**: **Render** free web service, built from `render.yaml` at the repo root. Free instances spin down after 15 minutes of inactivity and take roughly a minute to wake up.
 - **Database**: **Neon** free Postgres. Schema is created automatically on boot by the migration runner in `server/src/db.ts`.
 - **API domain**: `api.artur-sorokolit.uk` is a CNAME to the Render service, so the client's `VITE_API_URL` never changes.
