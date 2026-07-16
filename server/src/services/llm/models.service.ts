@@ -29,6 +29,12 @@ const isTextOnlyOut = (m: OpenRouterModel): boolean => {
   return out.includes('text') && out.every((modality) => modality === 'text');
 };
 
+// Classifiers answer prompts with verdicts like "User Safety: safe" instead of
+// prose. The catalog does not mark them, so match on how they are named.
+const CLASSIFIER_PATTERN = /content-safety|guard|moderation/i;
+const isClassifier = (m: OpenRouterModel): boolean =>
+  CLASSIFIER_PATTERN.test(m.id) || CLASSIFIER_PATTERN.test(m.name || '');
+
 // "NVIDIA: Nemotron 3 Super (free)" -> "Nemotron 3 Super"
 const toDisplayName = (m: OpenRouterModel): string =>
   (m.name || m.id)
@@ -79,7 +85,7 @@ export class ModelsService {
     const models: OpenRouterModel[] = response.data?.data || [];
 
     return models
-      .filter((m) => isFree(m) && isTextOnlyOut(m))
+      .filter((m) => isFree(m) && isTextOnlyOut(m) && !isClassifier(m))
       .map((m) => ({
         id: m.id,
         name: toDisplayName(m),
