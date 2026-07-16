@@ -4,8 +4,6 @@ import type { WindowState } from './OSProvider';
 export type OSContextType = {
   windows: Record<string, WindowState>;
   activeWindowId: string | null;
-  isAdmin: boolean;
-  setIsAdmin: (val: boolean) => void;
   isMobile: boolean;
   openWindow: (id: string, title: string, content?: React.ReactNode) => void;
   closeWindow: (id: string) => void;

@@ -33,12 +33,3 @@ export const submitContactForm = async (req: Request, res: Response, next: NextF
     next(error);
   }
 };
-
-export const getContacts = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const contacts = await contactService.getAllMessages();
-    res.json(contacts);
-  } catch (error) {
-    next(error);
-  }
-};

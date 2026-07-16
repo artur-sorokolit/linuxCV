@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { OSProvider } from './core/os/OSProvider';
 import { useOS } from './core/os/OSContext';
@@ -13,23 +12,7 @@ import Banner from './ui/banner/Banner';
 import Chat from '@/features/Chat/Chat';
 
 const Desktop = () => {
-  const { isAdmin, setIsAdmin, isMobile, windows } = useOS();
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.altKey && e.code === 'KeyA') {
-        e.preventDefault();
-        const newState = !isAdmin;
-        setIsAdmin(newState);
-        console.log(`Admin mode: ${newState ? 'ENABLED' : 'DISABLED'}`);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAdmin, setIsAdmin]);
-
-  const visibleApps = appConfigs.filter((app) => !app.isAdminOnly || isAdmin);
+  const { isMobile, windows } = useOS();
 
   return (
     <div className={`desktop ${isMobile ? 'desktop--mobile' : ''}`}>
@@ -54,14 +37,14 @@ const Desktop = () => {
       )}
 
       <div className="desktop-icons">
-        {visibleApps
+        {appConfigs
           .filter((config) => isMobile || config.id !== 'chat')
           .map((config) => (
             <DesktopIcon key={config.id} id={config.id} title={config.title} icon={config.icon} />
           ))}
       </div>
 
-      {visibleApps
+      {appConfigs
         .filter((config) => isMobile || config.id !== 'chat')
         .map((config) => (
           <Window key={config.id} id={config.id} title={config.title}>

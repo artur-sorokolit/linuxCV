@@ -10,11 +10,6 @@ export class ContactService {
       data.message,
     ]);
   }
-
-  async getAllMessages() {
-    const db = await getDb();
-    return await db.all('SELECT * FROM contacts ORDER BY created_at DESC');
-  }
 }
 
 export const contactService = new ContactService();

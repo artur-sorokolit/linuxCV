@@ -5,7 +5,6 @@ export type AppConfig = {
   title: string;
   icon: string;
   content: ReactNode;
-  isAdminOnly?: boolean;
 };
 
 export type BannerConfig = {

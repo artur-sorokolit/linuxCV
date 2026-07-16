@@ -8,9 +8,8 @@ Live demo: [https://cllown.github.io/linuxCV/](https://cllown.github.io/linuxCV/
 
 - **Desktop Experience** — Window manager with drag-and-drop, z-index stacking, minimize/focus/restore, and a "liquid glass" UI (CSS `backdrop-filter`)
 - **AI Assistant** — Built-in chat powered by Gemini / OpenRouter with session history
-- **Contact Form** — Visitors can reach out; admin panel to review submissions
+- **Contact Form** — Visitors can reach out; submissions are stored and emailed to you
 - **Responsive** — Transitions to fullscreen modals on mobile
-- **Admin Mode** — Access via `Ctrl+Alt+A` shortcut
 
 ## Apps
 
@@ -22,7 +21,6 @@ Live demo: [https://cllown.github.io/linuxCV/](https://cllown.github.io/linuxCV/
 | Education    | Academic background                       |
 | Tech Stack   | Technologies and tools                    |
 | Contact      | Message form                              |
-| Admin Panel  | View contact submissions (auth-gated)     |
 
 ## Architecture
 
@@ -32,11 +30,11 @@ linuxCV/
 │   └── src/
 │       ├── core/    # OS context (window registry, z-index state)
 │       ├── ui/      # Window, DesktopIcon, Taskbar, TopBar
-│       ├── features/# AboutMe, Experience, Chat, Contact, Admin
+│       ├── features/# AboutMe, Experience, Chat, Contact
 │       └── config/  # App registry
 └── server/          # Express 5 + TypeScript + Postgres
     └── src/
-        ├── routes/  # /api/contact, /api/chat, /api/admin
+        ├── routes/  # /api/contact, /api/chat
         ├── controllers/
         └── services/
 ```
@@ -124,7 +122,7 @@ The application runs entirely on free tiers:
 
 1. Create a Neon project and copy its pooled connection string.
 2. On Render, create a Blueprint from this repo — `render.yaml` defines the service.
-3. Set the secrets marked `sync: false` in the Render dashboard: `DATABASE_URL`, `CORS_ORIGINS`, `OPENROUTER_API_KEY`, `ADMIN_TOKEN`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`.
+3. Set the secrets marked `sync: false` in the Render dashboard: `DATABASE_URL`, `CORS_ORIGINS`, `OPENROUTER_API_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`.
 4. Point `api.artur-sorokolit.uk` at the Render service and add it as a custom domain there.
 
 ## License
