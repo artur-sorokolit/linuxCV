@@ -19,6 +19,10 @@ interface OpenRouterModel {
   architecture?: { output_modalities?: string[] };
 }
 
+const cooldownUntil = (retryAfterSeconds?: number): number =>
+  Date.now() +
+  Math.min(retryAfterSeconds ? retryAfterSeconds * 1000 : DEFAULT_COOLDOWN_MS, MAX_COOLDOWN_MS);
+
 const isFree = (m: OpenRouterModel): boolean =>
   Number(m.pricing?.prompt ?? NaN) === 0 && Number(m.pricing?.completion ?? NaN) === 0;
 
@@ -51,6 +55,8 @@ export class ModelsService {
   private inFlight: Promise<ChatModel[]> | null = null;
   /** model id -> epoch ms until which it is known to be rate-limited upstream */
   private cooldowns = new Map<string, number>();
+  /** epoch ms until which OpenRouter's account-wide free-model quota is known to be spent */
+  private freeTierCooldownUntil = 0;
 
   /** Free, text-producing models, longest context first. Cached; never throws. */
   async getCatalog(): Promise<ChatModel[]> {
@@ -115,6 +121,9 @@ export class ModelsService {
 
   /** For chat attempts: strictly excludes cooling-down models, so no attempt is wasted. */
   async getServable(): Promise<ChatModel[]> {
+    if (this.isFreeTierCoolingDown()) {
+      return [];
+    }
     const catalog = await this.getCatalog();
     return catalog.filter((m) => !this.isCoolingDown(m.id));
   }
@@ -136,10 +145,21 @@ export class ModelsService {
     return true;
   }
 
-  /** Called when a model answers 429, so it stops being offered until it recovers. */
+  isFreeTierCoolingDown(): boolean {
+    return Date.now() < this.freeTierCooldownUntil;
+  }
+
+  /** Called when one provider rate-limits a model, so it stops being offered until it recovers. */
   markRateLimited(modelId: string, retryAfterSeconds?: number): void {
-    const requested = retryAfterSeconds ? retryAfterSeconds * 1000 : DEFAULT_COOLDOWN_MS;
-    this.cooldowns.set(modelId, Date.now() + Math.min(requested, MAX_COOLDOWN_MS));
+    this.cooldowns.set(modelId, cooldownUntil(retryAfterSeconds));
+  }
+
+  /**
+   * Called on OpenRouter's own free-model cap, which counts requests per account
+   * rather than per model, so every ":free" id is spent at the same moment.
+   */
+  markFreeTierLimited(retryAfterSeconds?: number): void {
+    this.freeTierCooldownUntil = cooldownUntil(retryAfterSeconds);
   }
 }
 

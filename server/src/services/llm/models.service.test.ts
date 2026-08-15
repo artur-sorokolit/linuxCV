@@ -165,6 +165,51 @@ describe('ModelsService', () => {
     });
   });
 
+  describe('when the account free quota is spent', () => {
+    it('withholds every model, because the cap is not per model', async () => {
+      respondWith([catalogEntry('vendor/a:free', 200), catalogEntry('vendor/b:free', 100)]);
+      const service = new ModelsService();
+      await service.getCatalog();
+
+      service.markFreeTierLimited(300);
+
+      expect(await service.getServable()).toEqual([]);
+    });
+
+    it('still offers the full list to the model picker so the UI is never empty', async () => {
+      respondWith([catalogEntry('vendor/a:free', 200)]);
+      const service = new ModelsService();
+      await service.getCatalog();
+
+      service.markFreeTierLimited(300);
+      const available = await service.getAvailable();
+
+      expect(available.map((m) => m.id)).toEqual(['vendor/a:free']);
+    });
+
+    it('offers them again once the quota window has passed', async () => {
+      respondWith([catalogEntry('vendor/a:free', 200)]);
+      const service = new ModelsService();
+      await service.getCatalog();
+
+      service.markFreeTierLimited(300);
+      vi.advanceTimersByTime(301 * 1000);
+
+      expect((await service.getServable()).map((m) => m.id)).toEqual(['vendor/a:free']);
+    });
+
+    it('clamps a reset hint pointing at tomorrow so the chat is never dark all day', async () => {
+      respondWith([catalogEntry('vendor/a:free', 200)]);
+      const service = new ModelsService();
+      await service.getCatalog();
+
+      service.markFreeTierLimited(60 * 60 * 24);
+      vi.advanceTimersByTime(MAX_COOLDOWN_MS + 1000);
+
+      expect((await service.getServable()).map((m) => m.id)).toEqual(['vendor/a:free']);
+    });
+  });
+
   describe('when asked for a context window', () => {
     it('reports the width of a known model', async () => {
       respondWith([catalogEntry('vendor/a:free', 128000)]);

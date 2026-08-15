@@ -25,20 +25,35 @@ const answersWith = (reply: string) => ({
   data: { choices: [{ message: { content: reply } }] },
 });
 
-const httpError = (status: number, data: unknown = {}): AxiosError => {
+const httpError = (
+  status: number,
+  data: unknown = {},
+  headers: Record<string, string> = {}
+): AxiosError => {
   const error = new AxiosError('request failed');
   error.response = {
     status,
     data,
     statusText: '',
-    headers: new AxiosHeaders(),
+    headers,
     config: { headers: new AxiosHeaders() },
   };
   return error;
 };
 
-const rateLimited = (retryAfterSeconds?: number) =>
-  httpError(429, { error: { metadata: { retry_after_seconds: retryAfterSeconds } } });
+const providerRateLimited = (retryAfterSeconds?: number) =>
+  httpError(
+    429,
+    { error: { metadata: { provider_code: 'rate_limit_exceeded' } } },
+    retryAfterSeconds === undefined ? {} : { 'retry-after': String(retryAfterSeconds) }
+  );
+
+const platformRateLimited = (resetAt?: number) =>
+  httpError(
+    429,
+    { error: { metadata: { error_type: 'rate_limit_exceeded' } } },
+    resetAt === undefined ? {} : { 'x-ratelimit-reset': String(resetAt) }
+  );
 
 const sentModels = () =>
   vi.mocked(axios.post).mock.calls.map((call) => (call[1] as { model: string }).model);
@@ -62,6 +77,7 @@ describe('OpenRouterService', () => {
     ]);
     vi.spyOn(modelsService, 'getContextLength').mockResolvedValue(128000);
     vi.spyOn(modelsService, 'markRateLimited').mockImplementation(() => undefined);
+    vi.spyOn(modelsService, 'markFreeTierLimited').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(llmConfig, 'systemPrompt', 'get').mockReturnValue('SYSTEM PROMPT');
@@ -148,16 +164,26 @@ describe('OpenRouterService', () => {
     it('surfaces the first substantive failure rather than a trailing rate limit', async () => {
       vi.mocked(axios.post)
         .mockRejectedValueOnce(httpError(500, { error: { message: 'model exploded' } }))
-        .mockRejectedValue(rateLimited(30));
+        .mockRejectedValue(providerRateLimited(30));
 
       await expect(service.chat('hi', [], PREFERRED)).rejects.toThrow(/model exploded/);
     });
   });
 
-  describe('when models are rate limited', () => {
+  describe('when a provider rate limits one model', () => {
+    it('answers from the next model, because the limit is that provider only', async () => {
+      vi.mocked(axios.post)
+        .mockRejectedValueOnce(providerRateLimited(45))
+        .mockResolvedValue(answersWith('from the backup'));
+
+      const result = await service.chat('hi', [], PREFERRED);
+
+      expect(result.modelUsed).toBe(BACKUP);
+    });
+
     it('remembers the limit so the model stops being offered', async () => {
       vi.mocked(axios.post)
-        .mockRejectedValueOnce(rateLimited(45))
+        .mockRejectedValueOnce(providerRateLimited(45))
         .mockResolvedValue(answersWith('ok'));
 
       await service.chat('hi', [], PREFERRED);
@@ -165,13 +191,52 @@ describe('OpenRouterService', () => {
       expect(modelsService.markRateLimited).toHaveBeenCalledWith(PREFERRED, 45);
     });
 
+    it('leaves the rest of the free tier alone', async () => {
+      vi.mocked(axios.post)
+        .mockRejectedValueOnce(providerRateLimited(45))
+        .mockResolvedValue(answersWith('ok'));
+
+      await service.chat('hi', [], PREFERRED);
+
+      expect(modelsService.markFreeTierLimited).not.toHaveBeenCalled();
+    });
+
     it('tells the visitor to retry when every model is limited', async () => {
-      vi.mocked(axios.post).mockRejectedValue(rateLimited(30));
+      vi.mocked(axios.post).mockRejectedValue(providerRateLimited(30));
 
       await expect(service.chat('hi', [], PREFERRED)).rejects.toMatchObject({
         code: 'RATE_LIMIT_EXCEEDED',
         status: 429,
       });
+    });
+  });
+
+  describe('when the account free quota is spent', () => {
+    it('gives up after one attempt instead of walking models that share the cap', async () => {
+      vi.mocked(axios.post).mockRejectedValue(platformRateLimited());
+
+      await expect(service.chat('hi', [], PREFERRED)).rejects.toMatchObject({
+        code: 'RATE_LIMIT_EXCEEDED',
+      });
+      expect(vi.mocked(axios.post)).toHaveBeenCalledTimes(1);
+    });
+
+    it('withholds the whole free tier rather than the model that happened to answer', async () => {
+      vi.mocked(axios.post).mockRejectedValue(platformRateLimited());
+
+      await expect(service.chat('hi', [], PREFERRED)).rejects.toThrow();
+
+      expect(modelsService.markFreeTierLimited).toHaveBeenCalled();
+      expect(modelsService.markRateLimited).not.toHaveBeenCalled();
+    });
+
+    it('holds off until the quota window resets', async () => {
+      const inTenMinutes = Date.now() + 10 * 60 * 1000;
+      vi.mocked(axios.post).mockRejectedValue(platformRateLimited(inTenMinutes));
+
+      await expect(service.chat('hi', [], PREFERRED)).rejects.toThrow();
+
+      expect(modelsService.markFreeTierLimited).toHaveBeenCalledWith(600);
     });
 
     it('reports the outage when the catalog has nothing servable left', async () => {

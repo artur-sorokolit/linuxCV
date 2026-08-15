@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { LLMProvider, ChatMessage } from '../../types';
 import { config } from '../../config/env';
 import { llmConfig } from '../../config/llm';
@@ -15,22 +15,42 @@ const MIN_ATTEMPT_MS = 3_000;
 /** Absorbs the gap between the character estimate and the model's real tokenizer. */
 const CONTEXT_SAFETY_MARGIN_TOKENS = 512;
 
+/** "provider" limits this model alone; "account" spends OpenRouter's free cap for every :free id. */
+type RateLimitScope = 'provider' | 'account';
+
 interface RateLimitInfo {
-  isRateLimit: boolean;
+  scope: RateLimitScope | null;
   retryAfterSeconds?: number;
 }
 
 const isAuthError = (error: unknown): boolean => (error as { code?: string }).code === 'AUTH_ERROR';
 
+// X-RateLimit-Reset carries no documented unit, so read an epoch-sized number as a
+// timestamp and anything smaller as a delay. MAX_COOLDOWN_MS caps whichever it was.
+const EPOCH_MS_FLOOR = 1e12;
+
+const readWaitSeconds = (error: AxiosError): number | undefined => {
+  const headers = error.response?.headers ?? {};
+  const retryAfter = Number(headers['retry-after']);
+  if (Number.isFinite(retryAfter)) {
+    return retryAfter;
+  }
+  const reset = Number(headers['x-ratelimit-reset']);
+  if (!Number.isFinite(reset)) {
+    return undefined;
+  }
+  return reset >= EPOCH_MS_FLOOR ? (reset - Date.now()) / 1000 : reset;
+};
+
 const readRateLimit = (error: unknown): RateLimitInfo => {
   if (!axios.isAxiosError(error) || error.response?.status !== 429) {
-    return { isRateLimit: false };
+    return { scope: null };
   }
-  const metadata = error.response?.data?.error?.metadata;
-  const retryAfter = Number(metadata?.retry_after_seconds ?? metadata?.headers?.['Retry-After']);
+  // Only a provider-side 429 names the upstream code; OpenRouter's own cap does not.
+  const providerCode = error.response.data?.error?.metadata?.provider_code;
   return {
-    isRateLimit: true,
-    retryAfterSeconds: Number.isFinite(retryAfter) ? retryAfter : undefined,
+    scope: providerCode ? 'provider' : 'account',
+    retryAfterSeconds: readWaitSeconds(error),
   };
 };
 
@@ -70,16 +90,22 @@ export class OpenRouterService implements LLMProvider {
         if (isAuthError(error)) {
           throw error;
         }
-        const { isRateLimit, retryAfterSeconds } = readRateLimit(error);
-        if (isRateLimit) {
+        console.warn(
+          `⚠️ Model ${currentModel} failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        const { scope, retryAfterSeconds } = readRateLimit(error);
+        if (scope === 'account') {
+          // The cap is counted per account, so every remaining candidate is spent too.
+          modelsService.markFreeTierLimited(retryAfterSeconds);
+          break;
+        }
+        if (scope === 'provider') {
           // Remember it so neither the fallback nor the model picker offers it again yet.
           modelsService.markRateLimited(currentModel, retryAfterSeconds);
         } else {
           substantiveError = substantiveError ?? error;
         }
-        console.warn(
-          `⚠️ Model ${currentModel} failed: ${error instanceof Error ? error.message : String(error)}`
-        );
       }
     }
 
