@@ -1,12 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage, LLMProvider, ChatSession } from '../types';
 import { OpenRouterService } from './llm/openrouter.service';
+import { scopeGate as defaultScopeGate, type ScopeGate } from './llm/scopeGate';
+import { isCodeDump } from './llm/replyFilter';
+import { buildRefusal } from './refusal';
 import { chatRepository, type ChatRepository } from '../repositories/chat.repository';
 import { httpError } from '../utils/httpError';
 
 /** Ten exchanges of context. Older turns add tokens and latency, not much meaning. */
 export const HISTORY_MESSAGE_LIMIT = 20;
 const TITLE_LENGTH = 27;
+const SCOPE_GATE_MODEL = 'scope-gate';
 
 export interface ChatRequest {
   ownerToken: string;
@@ -23,7 +27,8 @@ const toTitle = (message: string): string =>
 export class ChatService {
   constructor(
     private readonly repository: ChatRepository = chatRepository,
-    private readonly llmProvider: LLMProvider = new OpenRouterService()
+    private readonly llmProvider: LLMProvider = new OpenRouterService(),
+    private readonly scopeGate: ScopeGate = defaultScopeGate
   ) {}
 
   async createSession(ownerToken: string, model: string, title: string): Promise<ChatSession> {
@@ -41,6 +46,11 @@ export class ChatService {
 
   async processMessage(request: ChatRequest): Promise<{ reply: string; modelUsed: string }> {
     await this.requireOwnedSession(request.ownerToken, request.sessionId);
+
+    if (!(await this.scopeGate.isInScope(request.message))) {
+      return this.redirect(request, SCOPE_GATE_MODEL);
+    }
+
     const history = await this.repository.getRecentHistory(
       request.sessionId,
       HISTORY_MESSAGE_LIMIT
@@ -52,6 +62,11 @@ export class ChatService {
         history,
         request.model
       );
+
+      // A tutorial-sized listing means the model drifted past what this chat is for.
+      if (isCodeDump(reply)) {
+        return this.redirect(request, modelUsed);
+      }
 
       await this.repository.appendExchange(request.sessionId, request.message, reply);
       if (history.length === 0) {
@@ -65,6 +80,16 @@ export class ChatService {
       await this.log(request, { reply: null, usedModel: request.model, error: reason });
       throw error;
     }
+  }
+
+  /** Off-topic turns stay out of the history, so they cannot prime later answers. */
+  private async redirect(
+    request: ChatRequest,
+    usedModel: string
+  ): Promise<{ reply: string; modelUsed: string }> {
+    const reply = buildRefusal(request.message);
+    await this.log(request, { reply, usedModel, error: null });
+    return { reply, modelUsed: usedModel };
   }
 
   private async requireOwnedSession(ownerToken: string, sessionId: string): Promise<void> {

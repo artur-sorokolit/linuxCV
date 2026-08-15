@@ -4,6 +4,7 @@ import { config } from '../../config/env';
 import { llmConfig } from '../../config/llm';
 import { modelsService } from './models.service';
 import { estimateTokens, fitHistoryToBudget } from './contextWindow';
+import { CHAT_COMPLETIONS_URL, buildHeaders, ChatCompletionResponse } from './openrouterApi';
 
 /** How many models to try before giving up, so one request can't walk the whole catalog. */
 const MAX_ATTEMPTS = 4;
@@ -17,10 +18,6 @@ const CONTEXT_SAFETY_MARGIN_TOKENS = 512;
 interface RateLimitInfo {
   isRateLimit: boolean;
   retryAfterSeconds?: number;
-}
-
-interface ChatCompletionResponse {
-  choices?: { message?: { content?: string } }[];
 }
 
 const isAuthError = (error: unknown): boolean => (error as { code?: string }).code === 'AUTH_ERROR';
@@ -44,8 +41,6 @@ const rateLimitError = (): Error =>
   );
 
 export class OpenRouterService implements LLMProvider {
-  private readonly apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
-
   constructor(private readonly apiKey = config.openrouterApiKey) {}
 
   async chat(
@@ -133,6 +128,11 @@ export class OpenRouterService implements LLMProvider {
     model: string,
     timeoutMs: number
   ): Promise<string> {
+    const { apiKey } = this;
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is not configured');
+    }
+
     const messages = await this.buildMessages(message, history, model);
     console.log(
       `🤖 Sending request to OpenRouter (model: ${model}, messages: ${messages.length})...`
@@ -140,22 +140,14 @@ export class OpenRouterService implements LLMProvider {
 
     try {
       const response = await axios.post<ChatCompletionResponse>(
-        this.apiUrl,
+        CHAT_COMPLETIONS_URL,
         {
           model,
           messages,
           temperature: llmConfig.temperature,
           max_tokens: llmConfig.maxTokens,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://artur-sorokolit.uk',
-            'X-Title': 'linuxCV',
-          },
-          timeout: timeoutMs,
-        }
+        { headers: buildHeaders(apiKey), timeout: timeoutMs }
       );
 
       const reply = response.data.choices?.[0]?.message?.content;

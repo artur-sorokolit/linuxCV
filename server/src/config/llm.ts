@@ -6,6 +6,11 @@ export const llmConfig = {
   // requests into a non-chat model. If this one is rate-limited or ever leaves the
   // catalog, the fallback walks the live list, so it is a preference, not a pin.
   model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+  // Pinned rather than taken from the visitor's choice, so the gate cannot be
+  // weakened by picking a model that ignores instructions. Every free model in the
+  // catalog reasons by default and burns a one-word budget on it, so this one is
+  // chosen for answering cleanly once reasoning is switched off.
+  scopeGateModel: 'nvidia/nemotron-3-nano-30b-a3b:free',
   get systemPrompt(): string {
     return buildSystemPrompt();
   },

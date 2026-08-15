@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mock, type MockProxy } from 'vitest-mock-extended';
 import { ChatService, HISTORY_MESSAGE_LIMIT } from './chat.service';
 import type { ChatRepository } from '../repositories/chat.repository';
+import type { ScopeGate } from './llm/scopeGate';
 import type { LLMProvider, ChatMessage, ChatSession } from '../types';
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
@@ -29,16 +30,19 @@ const request = (overrides: Partial<Parameters<ChatService['processMessage']>[0]
 describe('ChatService', () => {
   let repository: MockProxy<ChatRepository>;
   let llm: MockProxy<LLMProvider>;
+  let gate: MockProxy<ScopeGate>;
   let service: ChatService;
 
   beforeEach(() => {
     repository = mock<ChatRepository>();
     llm = mock<LLMProvider>();
+    gate = mock<ScopeGate>();
     repository.findSession.mockResolvedValue(SESSION);
     repository.getRecentHistory.mockResolvedValue([]);
+    gate.isInScope.mockResolvedValue(true);
     llm.chat.mockResolvedValue({ reply: 'TypeScript and Node.', modelUsed: MODEL });
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    service = new ChatService(repository, llm);
+    service = new ChatService(repository, llm, gate);
   });
 
   describe('when a visitor sends a message to their own session', () => {
@@ -170,6 +174,75 @@ describe('ChatService', () => {
       await service.processMessage(request()).catch(() => undefined);
 
       expect(repository.appendExchange).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the question is not about Artur', () => {
+    beforeEach(() => {
+      gate.isInScope.mockResolvedValue(false);
+    });
+
+    it('answers with a redirect instead of the question', async () => {
+      const result = await service.processMessage(request({ message: 'write me a quick sort' }));
+
+      expect(result.reply).toMatch(/portfolio assistant/i);
+    });
+
+    it('answers in the language the visitor used', async () => {
+      const result = await service.processMessage(
+        request({ message: 'напиши функцію сортування' })
+      );
+
+      expect(result.reply).toMatch(/Артур/);
+    });
+
+    it('spends no call on the answering model', async () => {
+      await service.processMessage(request({ message: 'write me a quick sort' }));
+
+      expect(llm.chat).not.toHaveBeenCalled();
+    });
+
+    it('keeps the refused exchange out of the conversation', async () => {
+      await service.processMessage(request({ message: 'write me a quick sort' }));
+
+      expect(repository.appendExchange).not.toHaveBeenCalled();
+    });
+
+    it('still records it so the filtering can be reviewed', async () => {
+      await service.processMessage(request({ message: 'write me a quick sort' }));
+
+      expect(repository.logChatRequest).toHaveBeenCalledWith(
+        expect.objectContaining({ usedModel: 'scope-gate' })
+      );
+    });
+  });
+
+  describe('when the model answers with a wall of code', () => {
+    const codeDump = ['Here you go:', '```ts', ...Array(30).fill('const x = 1;'), '```'].join('\n');
+
+    beforeEach(() => {
+      llm.chat.mockResolvedValue({ reply: codeDump, modelUsed: MODEL });
+    });
+
+    it('replaces it with the redirect', async () => {
+      const result = await service.processMessage(request());
+
+      expect(result.reply).not.toContain('```');
+    });
+
+    it('keeps it out of the conversation', async () => {
+      await service.processMessage(request());
+
+      expect(repository.appendExchange).not.toHaveBeenCalled();
+    });
+
+    it('lets a short illustrative snippet through untouched', async () => {
+      const snippet = ['I did it like this:', '```ts', 'const a = 1;', '```'].join('\n');
+      llm.chat.mockResolvedValue({ reply: snippet, modelUsed: MODEL });
+
+      const result = await service.processMessage(request());
+
+      expect(result.reply).toBe(snippet);
     });
   });
 
