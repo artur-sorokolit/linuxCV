@@ -24,11 +24,16 @@ export const fetchSessions = async (): Promise<ChatSession[]> => {
   return request<ChatSession[]>('/api/chat/sessions');
 };
 
-export const createSession = async (model: string, title: string): Promise<ChatSession> => {
+export const createSession = async (
+  model: string,
+  title: string,
+  signal?: AbortSignal
+): Promise<ChatSession> => {
   return request<ChatSession>('/api/chat/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, title }),
+    signal,
   });
 };
 

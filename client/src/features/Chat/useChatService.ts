@@ -151,22 +151,21 @@ export const useChatService = () => {
 
   const [input, setInput] = useState('');
 
+  const refreshSessionsInBackground = useCallback(() => {
+    api
+      .fetchSessions()
+      .then((fresh) => dispatch({ type: 'SET_SESSIONS', payload: fresh }))
+      .catch((err) => console.error('Failed to refresh sessions:', err));
+  }, []);
+
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || state.isLoading) {
+      const message = text.trim();
+      if (!message || state.isLoading) {
         return;
       }
 
-      let sessionId = state.currentSessionId;
-      if (!sessionId) {
-        const newSession = await api.createSession(state.selectedModel.id, text.slice(0, 30));
-        dispatch({ type: 'ADD_SESSION', payload: newSession });
-        sessionId = newSession.id;
-        dispatch({ type: 'SET_CURRENT_SESSION', payload: sessionId });
-      }
-
-      const userMsg = { role: 'user', content: text.trim() } as Message;
-      dispatch({ type: 'APPEND_MESSAGE', payload: userMsg });
+      dispatch({ type: 'APPEND_MESSAGE', payload: { role: 'user', content: message } as Message });
       setInput('');
       dispatch({ type: 'SET_LOADING', payload: true });
 
@@ -174,8 +173,20 @@ export const useChatService = () => {
       abortControllerRef.current = controller;
 
       try {
+        let sessionId = state.currentSessionId;
+        if (!sessionId) {
+          const newSession = await api.createSession(
+            state.selectedModel.id,
+            message.slice(0, 30),
+            controller.signal
+          );
+          dispatch({ type: 'ADD_SESSION', payload: newSession });
+          sessionId = newSession.id;
+          dispatch({ type: 'SET_CURRENT_SESSION', payload: sessionId });
+        }
+
         const { reply } = await api.postMessage(
-          text.trim(),
+          message,
           sessionId,
           state.selectedModel.id,
           controller.signal
@@ -184,8 +195,7 @@ export const useChatService = () => {
           type: 'APPEND_MESSAGE',
           payload: { role: 'assistant', content: reply || 'No response' },
         });
-        const fresh = await api.fetchSessions();
-        dispatch({ type: 'SET_SESSIONS', payload: fresh });
+        refreshSessionsInBackground();
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') {
           dispatch({
@@ -207,7 +217,7 @@ export const useChatService = () => {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },
-    [state]
+    [state.isLoading, state.currentSessionId, state.selectedModel.id, refreshSessionsInBackground]
   );
 
   const setSelectedModel = useCallback((model: ChatModel) => {

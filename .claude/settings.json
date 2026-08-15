@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx prettier *)",
+      "Bash(agent-browser click *)",
+      "Bash(agent-browser get *)",
+      "Bash(agent-browser reload *)",
+      "Bash(agent-browser snapshot *)",
+      "Bash(agent-browser find *)",
+      "Bash(curl -s -X DELETE http://localhost:8000/api/v1/collections/71d95399-876a-4362-bc65-058d74ce6776 -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -o /dev/null -w 'delete1 %{http_code}\\\\n')",
+      "Bash(curl -s -X DELETE http://localhost:8000/api/v1/collections/931fc880-367e-4ee5-b644-72be301f8aff -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -o /dev/null -w 'delete2 %{http_code}\\\\n')",
+      "Bash(agent-browser close *)",
+      "Bash(agent-browser open *)",
+      "Bash(agent-browser screenshot *)",
+      "Bash(agent-browser fill *)",
+      "Bash(curl -s http://localhost:8000/api/v1/collections/ -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(python3 -c \"import json,sys; [print\\(c['id']\\) for c in json.load\\(sys.stdin\\)]\")",
+      "Bash(PYTHONPATH=. ./.venv/bin/pytest tests/mod/test_api.py -k bulk -v)",
+      "Bash(npx tsgo *)",
+      "Bash(npx eslint *)"
+    ]
+  }
+}
