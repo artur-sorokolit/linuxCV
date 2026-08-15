@@ -1,35 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { contactService } from '../services/contact.service';
 import { emailService } from '../services/email.service';
+import type { ContactFormRequest } from '../validation/contact.schema';
 
 export const submitContactForm = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, message } = req.body;
+    const form = req.body as ContactFormRequest;
 
-    console.log(`📬 Received new contact form submission from: ${name} (${email})`);
+    await contactService.saveMessage(form);
 
-    if (!name || !email || !message) {
-      console.warn('⚠️ Validation failed: Name, email, and message are required.');
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    console.log('💾 Saving message to database...');
-    await contactService.saveMessage({ name, email, message });
-    console.log('✅ Message successfully saved to database.');
-
-    // Send email notification (non-blocking)
     emailService
-      .sendContactNotification({ name, email, message })
-      .then(() => {
-        console.log('✨ Email notification process completed.');
-      })
-      .catch((err) => {
-        console.error('❌ Failed to send contact email notification:', err);
-      });
+      .sendContactNotification(form)
+      .catch((err) => console.error('❌ Failed to send contact email notification:', err));
 
     res.status(201).json({ message: 'Form submitted successfully' });
   } catch (error) {
-    console.error('❌ Critical error in contact form handler:', error);
     next(error);
   }
 };

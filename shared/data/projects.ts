@@ -42,6 +42,30 @@ export const projectsData: Project[] = [
     cardType: "wide",
   },
   {
+    id: "surge-ai",
+    title: "Surge AI",
+    subtitle: "Evaluation of Agentic Coding Models",
+    role: "Software Engineer, Model Evaluation",
+    description:
+      "A client engagement focused on measuring how agentic coding models behave on real engineering work rather than toy prompts. The work covers authoring production-shaped tasks, stress-testing models until they break, and documenting the failure modes so model quality can be judged on evidence.",
+    tags: [
+      "Agentic Model Evaluation",
+      "TypeScript",
+      "React",
+      "Node.js",
+      "Python",
+      "LLM Tooling",
+      "Prompt Engineering",
+    ],
+    highlights: [
+      "Stress-test agentic coding models on real engineering work: find where they break, reproduce the failure, and document the failure mode.",
+      "Author realistic coding tasks and evaluation scenarios across full-stack TypeScript/React and Node.js/Python, so performance is measured on production-shaped problems.",
+      "Assess model output end to end: correctness, architectural judgment, test coverage, and behaviour across long multi-step agent loops.",
+      "Work embedded with the client team, feeding findings back into how the models are evaluated.",
+    ],
+    cardType: "wide",
+  },
+  {
     id: "Graintrack",
     title: "Graintrack CTRM Enterprise System",
     subtitle: "High-Performance Commodity Trading & Risk Management Platform",

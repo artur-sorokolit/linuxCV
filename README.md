@@ -86,15 +86,17 @@ PORT=5000
 DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 DATABASE_SSL=true            # set to false for a local Postgres without TLS
 CORS_ORIGINS=https://artur-sorokolit.uk,http://localhost:5173
-GEMINI_API_KEY=your_gemini_key
 OPENROUTER_API_KEY=your_openrouter_key
+CHAT_LOG_RETENTION_DAYS=0    # 0 keeps chat_logs forever; any positive value prunes daily
 
 # Email notifications (Gmail SMTP Setup)
 GMAIL_USER=your_email@gmail.com
 GMAIL_APP_PASSWORD=your_16_character_app_password
 ```
 
-`CORS_ORIGINS` is a comma-separated allowlist of browser origins. Leave it empty to allow any origin (local development only).
+The server validates these on boot and refuses to start if something required is missing.
+
+`CORS_ORIGINS` is a comma-separated allowlist of browser origins. Leave it empty to allow any origin — permitted in development only, since production requires a non-empty list.
 
 **Client** (`client/.env`):
 

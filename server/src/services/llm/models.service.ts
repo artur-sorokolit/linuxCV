@@ -7,6 +7,9 @@ const CATALOG_URL = 'https://openrouter.ai/api/v1/models';
 const CATALOG_TTL_MS = 10 * 60 * 1000;
 // OpenRouter reports its own retry_after; this only covers responses that omit it.
 const DEFAULT_COOLDOWN_MS = 60 * 1000;
+export const MAX_COOLDOWN_MS = 60 * 60 * 1000;
+// Used when a model answers but is absent from the catalog, so the budget still applies.
+const FALLBACK_CONTEXT_LENGTH = 8192;
 
 interface OpenRouterModel {
   id: string;
@@ -104,12 +107,21 @@ export class ModelsService {
       });
   }
 
-  /** Catalog minus models we know are rate-limited right now. */
+  /** For the model picker: never empty, because an empty dropdown helps nobody. */
   async getAvailable(): Promise<ChatModel[]> {
+    const servable = await this.getServable();
+    return servable.length > 0 ? servable : this.getCatalog();
+  }
+
+  /** For chat attempts: strictly excludes cooling-down models, so no attempt is wasted. */
+  async getServable(): Promise<ChatModel[]> {
     const catalog = await this.getCatalog();
-    const available = catalog.filter((m) => !this.isCoolingDown(m.id));
-    // If everything is cooling down, offering the full list beats offering nothing.
-    return available.length > 0 ? available : catalog;
+    return catalog.filter((m) => !this.isCoolingDown(m.id));
+  }
+
+  async getContextLength(modelId: string): Promise<number> {
+    const catalog = await this.getCatalog();
+    return catalog.find((m) => m.id === modelId)?.contextLength || FALLBACK_CONTEXT_LENGTH;
   }
 
   isCoolingDown(modelId: string): boolean {
@@ -126,8 +138,8 @@ export class ModelsService {
 
   /** Called when a model answers 429, so it stops being offered until it recovers. */
   markRateLimited(modelId: string, retryAfterSeconds?: number): void {
-    const ms = retryAfterSeconds ? retryAfterSeconds * 1000 : DEFAULT_COOLDOWN_MS;
-    this.cooldowns.set(modelId, Date.now() + ms);
+    const requested = retryAfterSeconds ? retryAfterSeconds * 1000 : DEFAULT_COOLDOWN_MS;
+    this.cooldowns.set(modelId, Date.now() + Math.min(requested, MAX_COOLDOWN_MS));
   }
 }
 

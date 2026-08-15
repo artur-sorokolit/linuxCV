@@ -10,7 +10,7 @@ module.exports = defineConfig([
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: './tsconfig.json',
+        project: './tsconfig.test.json',
         ecmaVersion: 2020,
         sourceType: 'module',
       },
@@ -25,6 +25,10 @@ module.exports = defineConfig([
       ...js.configs.recommended.rules,
       ...tsPlugin.configs.recommended.rules,
       'curly': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
   {

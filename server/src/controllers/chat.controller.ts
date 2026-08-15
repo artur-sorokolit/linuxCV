@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { chatService } from '../services/chat.service';
 import { modelsService } from '../services/llm/models.service';
+import { requireVisitorToken } from '../utils/visitorToken';
+import { clientIp } from '../utils/clientIp';
+import type { ChatMessageRequest, CreateSessionRequest } from '../validation/chat.schema';
 
 export const getModels = async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -12,24 +15,20 @@ export const getModels = async (_req: Request, res: Response, next: NextFunction
 
 export const handleChat = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { message, sessionId, model } = req.body;
+    const ownerToken = requireVisitorToken(req);
+    const { message, sessionId, model } = req.body as ChatMessageRequest;
 
-    if (!message || !sessionId || !model) {
-      return res.status(400).json({ error: 'Message, sessionId, and model are required' });
-    }
+    const { reply, modelUsed } = await chatService.processMessage({
+      ownerToken,
+      sessionId,
+      message,
+      model,
+      ip: clientIp(req),
+      userAgent: req.headers['user-agent'],
+    });
 
-    const rawIp =
-      req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp;
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-
-    console.log(`💬 [CHAT] IP: ${ip} | User-Agent: ${userAgent} | Message: "${message}"`);
-
-    const { reply, modelUsed } = await chatService.processMessage(message, sessionId, model, ip, userAgent);
-
-    console.log(`🤖 [CHAT RESPONSE] IP: ${ip} | Model Used: ${modelUsed} | Reply: "${reply.slice(0, 100)}${reply.length > 100 ? '...' : ''}"`);
-
-    res.json({ reply });
+    console.log(`🤖 [CHAT] session ${sessionId} answered by ${modelUsed}`);
+    res.json({ reply, modelUsed });
   } catch (error) {
     next(error);
   }
@@ -37,9 +36,10 @@ export const handleChat = async (req: Request, res: Response, next: NextFunction
 
 export const createSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { model, title } = req.body;
-    const session = await chatService.createSession(model, title);
-    res.status(201).json(session);
+    const ownerToken = requireVisitorToken(req);
+    const { model, title } = req.body as CreateSessionRequest;
+
+    res.status(201).json(await chatService.createSession(ownerToken, model, title));
   } catch (error) {
     next(error);
   }
@@ -47,8 +47,7 @@ export const createSession = async (req: Request, res: Response, next: NextFunct
 
 export const getSessions = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const sessions = await chatService.getSessions();
-    res.json(sessions);
+    res.json(await chatService.listSessions(requireVisitorToken(req)));
   } catch (error) {
     next(error);
   }
@@ -56,9 +55,10 @@ export const getSessions = async (req: Request, res: Response, next: NextFunctio
 
 export const getSessionHistory = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    const history = await chatService.getHistory(id as string);
-    res.json(history);
+    const ownerToken = requireVisitorToken(req);
+    const { id } = req.params as { id: string };
+
+    res.json(await chatService.getHistory(ownerToken, id));
   } catch (error) {
     next(error);
   }

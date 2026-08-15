@@ -89,11 +89,15 @@ const Projects = () => {
                 </svg>
 
                 <div className="folder-logo-badge">
-                  <img
-                    src={project.logo}
-                    alt={project.title}
-                    className={`folder-logo-img logo-img--${project.id}`}
-                  />
+                  {project.logo ? (
+                    <img
+                      src={project.logo}
+                      alt={project.title}
+                      className={`folder-logo-img logo-img--${project.id}`}
+                    />
+                  ) : (
+                    <span className="folder-logo-initial">{project.title.charAt(0)}</span>
+                  )}
                 </div>
               </div>
               <span className="folder-label">{project.title}</span>

@@ -1,15 +1,7 @@
-import { Pool, QueryResultRow } from 'pg';
+import { Pool, PoolClient, QueryResultRow } from 'pg';
 import { config } from './config/env';
 
-// The services were written against the `sqlite` package's run/all/get API with
-// `?` placeholders. This adapter keeps that surface over `pg` so they stay unchanged.
-// The rewrite is positional only: a `?` inside a string literal would be mangled.
-const toPositional = (sql: string): string => {
-  let i = 0;
-  return sql.replace(/\?/g, () => `$${++i}`);
-};
-
-export interface Db {
+export interface DbExecutor {
   run(sql: string, params?: unknown[]): Promise<void>;
   all<T extends QueryResultRow = QueryResultRow>(sql: string, params?: unknown[]): Promise<T[]>;
   get<T extends QueryResultRow = QueryResultRow>(
@@ -17,6 +9,26 @@ export interface Db {
     params?: unknown[]
   ): Promise<T | undefined>;
 }
+
+export interface Db extends DbExecutor {
+  transaction<T>(work: (tx: DbExecutor) => Promise<T>): Promise<T>;
+}
+
+type Queryable = Pick<PoolClient, 'query'>;
+
+const executorOver = (source: Queryable): DbExecutor => ({
+  async run(sql, params) {
+    await source.query(sql, params);
+  },
+  async all(sql, params) {
+    const result = await source.query(sql, params);
+    return result.rows;
+  },
+  async get(sql, params) {
+    const result = await source.query(sql, params);
+    return result.rows[0];
+  },
+});
 
 class DatabaseService {
   private static instance: Db | null = null;
@@ -42,16 +54,20 @@ class DatabaseService {
     });
 
     const db: Db = {
-      async run(sql, params = []) {
-        await pool.query(toPositional(sql), params);
-      },
-      async all(sql, params = []) {
-        const result = await pool.query(toPositional(sql), params);
-        return result.rows;
-      },
-      async get(sql, params = []) {
-        const result = await pool.query(toPositional(sql), params);
-        return result.rows[0];
+      ...executorOver(pool),
+      async transaction(work) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const result = await work(executorOver(client));
+          await client.query('COMMIT');
+          return result;
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
       },
     };
 
@@ -128,15 +144,42 @@ class DatabaseService {
       );
     `
     );
+
+    // Sessions predating this migration have no owner, so they stop being listed.
+    // That is the point: until now every visitor could read every other visitor's chat.
+    await this.applyMigration(
+      db,
+      '003_session_ownership',
+      `
+      ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS owner_token TEXT;
+
+      CREATE INDEX IF NOT EXISTS idx_chat_sessions_owner
+        ON chat_sessions (owner_token, created_at DESC);
+
+      ALTER TABLE chat_history DROP CONSTRAINT IF EXISTS chat_history_session_id_fkey;
+      ALTER TABLE chat_history ADD CONSTRAINT chat_history_session_id_fkey
+        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE;
+
+      ALTER TABLE chat_history DROP CONSTRAINT IF EXISTS chat_history_session_present;
+      ALTER TABLE chat_history ADD CONSTRAINT chat_history_session_present
+        CHECK (session_id IS NOT NULL) NOT VALID;
+
+      CREATE INDEX IF NOT EXISTS idx_chat_logs_created ON chat_logs (created_at);
+    `
+    );
   }
 
   private static async applyMigration(db: Db, name: string, sql: string) {
-    const migration = await db.get('SELECT name FROM migrations WHERE name = ?', [name]);
-    if (!migration) {
-      console.log(`Applying migration: ${name}`);
-      await db.run(sql);
-      await db.run('INSERT INTO migrations (name) VALUES (?)', [name]);
+    const migration = await db.get('SELECT name FROM migrations WHERE name = $1', [name]);
+    if (migration) {
+      return;
     }
+
+    console.log(`Applying migration: ${name}`);
+    await db.transaction(async (tx) => {
+      await tx.run(sql);
+      await tx.run('INSERT INTO migrations (name) VALUES ($1)', [name]);
+    });
   }
 }
 

@@ -1,6 +1,9 @@
 import React, { type Dispatch, type SetStateAction } from 'react';
 import { type ChatModel } from '@/core/config/chatConfig';
 
+/** Matches the server-side cap, so an overlong message is stopped before the round trip. */
+const MAX_MESSAGE_LENGTH = 4000;
+
 type Props = {
   input: string;
   setInput: Dispatch<SetStateAction<string>>;
@@ -31,19 +34,22 @@ export const ChatInput: React.FC<Props> = ({
   stopGeneration,
 }) => (
   <div className="chat-panel__input-container">
-    <div className="chat-panel__suggestions">
-      {suggestions.map((s) => (
-        <button key={s} type="button" className="chat-panel__pill" onClick={() => sendMessage(s)}>
-          {s}
-        </button>
-      ))}
-    </div>
+    {suggestions.length > 0 && (
+      <div className="chat-panel__suggestions">
+        {suggestions.map((s) => (
+          <button key={s} type="button" className="chat-panel__pill" onClick={() => sendMessage(s)}>
+            {s}
+          </button>
+        ))}
+      </div>
+    )}
 
     <form className="chat-panel__input-wrapper" onSubmit={handleSubmit}>
       <input
         type="text"
         className="chat-panel__input"
         placeholder="Ask anything"
+        maxLength={MAX_MESSAGE_LENGTH}
         value={input}
         onChange={(e) => setInput(e.target.value)}
       />

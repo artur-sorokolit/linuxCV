@@ -18,10 +18,6 @@ export interface ChatMessage {
   content: string;
 }
 
-export interface LLMResponse {
-  reply: string;
-}
-
 export interface ChatModel {
   id: string;
   name: string;

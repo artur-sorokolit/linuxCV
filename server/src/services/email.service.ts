@@ -1,10 +1,12 @@
 import nodemailer from 'nodemailer';
+import { config } from '../config/env';
+import { escapeHtml } from '../utils/escapeHtml';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
+    user: config.gmailUser,
+    pass: config.gmailAppPassword,
   },
 });
 
@@ -18,17 +20,19 @@ export class EmailService {
   private recipientEmail: string;
 
   constructor() {
-    this.recipientEmail = process.env.GMAIL_USER || '';
+    this.recipientEmail = config.gmailUser || '';
   }
 
   async sendContactNotification(data: ContactEmailData): Promise<void> {
-    const { name, email, message } = data;
+    const name = escapeHtml(data.name);
+    const email = escapeHtml(data.email);
+    const message = escapeHtml(data.message);
 
     const mailOptions = {
       from: `"LinuxCV Contact Form" <${this.recipientEmail}>`,
       to: this.recipientEmail,
-      replyTo: email,
-      subject: `📬 Нове повідомлення від ${name}`,
+      replyTo: data.email,
+      subject: `📬 Нове повідомлення від ${data.name}`,
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px 32px;">
@@ -59,9 +63,7 @@ export class EmailService {
       `,
     };
 
-    console.log(
-      `📧 Sending contact email notification from ${name} (${email}) to ${this.recipientEmail}...`
-    );
+    console.log(`📧 Sending contact email notification to ${this.recipientEmail}...`);
     const info = await transporter.sendMail(mailOptions);
     console.log(`🎉 Email sent successfully! Message ID: ${info.messageId}`);
   }

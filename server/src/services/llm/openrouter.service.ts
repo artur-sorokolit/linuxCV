@@ -3,14 +3,27 @@ import { LLMProvider, ChatMessage } from '../../types';
 import { config } from '../../config/env';
 import { llmConfig } from '../../config/llm';
 import { modelsService } from './models.service';
+import { estimateTokens, fitHistoryToBudget } from './contextWindow';
 
 /** How many models to try before giving up, so one request can't walk the whole catalog. */
 const MAX_ATTEMPTS = 4;
+/** Cloudflare cuts a proxied request at 100s, so every attempt shares one shorter budget. */
+export const TOTAL_BUDGET_MS = 45_000;
+export const REQUEST_TIMEOUT_MS = 20_000;
+const MIN_ATTEMPT_MS = 3_000;
+/** Absorbs the gap between the character estimate and the model's real tokenizer. */
+const CONTEXT_SAFETY_MARGIN_TOKENS = 512;
 
 interface RateLimitInfo {
   isRateLimit: boolean;
   retryAfterSeconds?: number;
 }
+
+interface ChatCompletionResponse {
+  choices?: { message?: { content?: string } }[];
+}
+
+const isAuthError = (error: unknown): boolean => (error as { code?: string }).code === 'AUTH_ERROR';
 
 const readRateLimit = (error: unknown): RateLimitInfo => {
   if (!axios.isAxiosError(error) || error.response?.status !== 429) {
@@ -24,75 +37,109 @@ const readRateLimit = (error: unknown): RateLimitInfo => {
   };
 };
 
+const rateLimitError = (): Error =>
+  Object.assign(
+    new Error('The free models are all busy right now. Please try again in a moment.'),
+    { code: 'RATE_LIMIT_EXCEEDED', status: 429 }
+  );
+
 export class OpenRouterService implements LLMProvider {
-  private readonly apiKey = config.openrouterApiKey;
   private readonly apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+
+  constructor(private readonly apiKey = config.openrouterApiKey) {}
 
   async chat(
     message: string,
     history: ChatMessage[],
     model?: string
   ): Promise<{ reply: string; modelUsed: string }> {
+    if (!this.apiKey) {
+      throw new Error('OpenRouter API key is not configured');
+    }
+
     const candidates = await this.buildCandidates(model);
-    let lastError: unknown = null;
-    let allRateLimited = candidates.length > 0;
+    const deadline = Date.now() + TOTAL_BUDGET_MS;
+    let substantiveError: unknown = null;
 
     for (const currentModel of candidates) {
+      const remainingMs = deadline - Date.now();
+      if (remainingMs < MIN_ATTEMPT_MS) {
+        break;
+      }
+
       try {
-        const reply = await this.sendRequest(message, history, currentModel);
+        const timeoutMs = Math.min(REQUEST_TIMEOUT_MS, remainingMs);
+        const reply = await this.sendRequest(message, history, currentModel, timeoutMs);
         return { reply, modelUsed: currentModel };
       } catch (error: unknown) {
+        if (isAuthError(error)) {
+          throw error;
+        }
         const { isRateLimit, retryAfterSeconds } = readRateLimit(error);
         if (isRateLimit) {
           // Remember it so neither the fallback nor the model picker offers it again yet.
           modelsService.markRateLimited(currentModel, retryAfterSeconds);
         } else {
-          allRateLimited = false;
+          substantiveError = substantiveError ?? error;
         }
         console.warn(
           `⚠️ Model ${currentModel} failed: ${error instanceof Error ? error.message : String(error)}`
         );
-        lastError = error;
       }
     }
 
-    if (allRateLimited) {
-      const limitErr = new Error(
-        'The free models are all busy right now. Please try again in a moment.'
-      );
-      Object.assign(limitErr, { code: 'RATE_LIMIT_EXCEEDED', status: 429 });
-      throw limitErr;
-    }
-    throw lastError || new Error('No free model was able to respond.');
+    throw substantiveError ?? rateLimitError();
   }
 
-  /** Requested model first, then live free models that are not cooling down. */
+  /** Requested model first, then live free models, with everything cooling down excluded. */
   private async buildCandidates(requested?: string): Promise<string[]> {
-    const available = await modelsService.getAvailable().catch(() => []);
-    const ordered = available.map((m) => m.id);
     const preferred = requested || llmConfig.model;
-    const candidates = [preferred, ...ordered.filter((id) => id !== preferred)];
-    return candidates.slice(0, MAX_ATTEMPTS);
+    const servable = await modelsService.getServable().catch(() => null);
+    if (!servable) {
+      return [preferred];
+    }
+
+    const ids = servable.map((m) => m.id);
+    const ordered = ids.includes(preferred)
+      ? [preferred, ...ids.filter((id) => id !== preferred)]
+      : ids;
+    return ordered.slice(0, MAX_ATTEMPTS);
+  }
+
+  private async buildMessages(
+    message: string,
+    history: ChatMessage[],
+    model: string
+  ): Promise<ChatMessage[]> {
+    const systemPrompt = llmConfig.systemPrompt;
+    const contextLength = await modelsService.getContextLength(model);
+    const historyBudget =
+      contextLength -
+      llmConfig.maxTokens -
+      estimateTokens(systemPrompt) -
+      estimateTokens(message) -
+      CONTEXT_SAFETY_MARGIN_TOKENS;
+
+    return [
+      { role: 'system', content: systemPrompt },
+      ...fitHistoryToBudget(history, historyBudget),
+      { role: 'user', content: message },
+    ];
   }
 
   private async sendRequest(
     message: string,
     history: ChatMessage[],
-    model: string
+    model: string,
+    timeoutMs: number
   ): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('OpenRouter API key is not configured');
-    }
-
-    const messages = [
-      { role: 'system', content: llmConfig.systemPrompt },
-      ...history,
-      { role: 'user', content: message },
-    ];
-    console.log(`🤖 Sending request to OpenRouter (model: ${model})...`);
+    const messages = await this.buildMessages(message, history, model);
+    console.log(
+      `🤖 Sending request to OpenRouter (model: ${model}, messages: ${messages.length})...`
+    );
 
     try {
-      const response = await axios.post(
+      const response = await axios.post<ChatCompletionResponse>(
         this.apiUrl,
         {
           model,
@@ -107,7 +154,7 @@ export class OpenRouterService implements LLMProvider {
             'HTTP-Referer': 'https://artur-sorokolit.uk',
             'X-Title': 'linuxCV',
           },
-          timeout: 60000,
+          timeout: timeoutMs,
         }
       );
 

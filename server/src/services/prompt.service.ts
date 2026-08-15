@@ -5,7 +5,13 @@ import { techStackData } from '../../../shared/data/techStack';
 import { projectsData } from '../../../shared/data/projects';
 import { contactLinks } from '../../../shared/data/contacts';
 
+let cachedPrompt: string | null = null;
+
 export function buildSystemPrompt(): string {
+  return (cachedPrompt ??= composeSystemPrompt());
+}
+
+function composeSystemPrompt(): string {
   const profile = `[PERSONAL PROFILE]
 - Name: ${profileData.name}
 - Role: ${profileData.role}

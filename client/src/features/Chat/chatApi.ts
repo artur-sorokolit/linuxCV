@@ -1,10 +1,12 @@
 import { API_BASE_URL } from '@/core/config/api';
 import type { ChatModel } from '@/core/config/chatConfig';
 import type { ApiError, ChatSession, Message } from './Chat';
+import { getVisitorId } from './visitorId';
 
 async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
   const resp = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...init,
+    headers: { 'x-visitor-id': getVisitorId(), ...init.headers },
   });
 
   const data = await resp.json();
@@ -48,8 +50,8 @@ export const postMessage = async (
   sessionId: string,
   model: string,
   signal?: AbortSignal
-): Promise<{ reply: string }> => {
-  return request<{ reply: string }>('/api/chat', {
+): Promise<{ reply: string; modelUsed: string }> => {
+  return request<{ reply: string; modelUsed: string }>('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: text, sessionId, model }),

@@ -1,18 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../types';
+import { config } from '../config/env';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const errorHandler = (err: unknown, req: Request, res: Response, _next: NextFunction) => {
+const GENERIC_MESSAGE = 'Internal Server Error';
+
+export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const error = err instanceof Error ? err : new Error(String(err));
   const status = (err as { status?: number }).status || 500;
+  const isServerFault = status >= 500;
+
+  console.error(`[Error ${status}]:`, error.message);
 
   const apiError: ApiError = {
-    message: error.message || 'Internal Server Error',
+    // A 5xx reason is ours to debug, not the visitor's to read: it leaks internals.
+    message: isServerFault ? GENERIC_MESSAGE : error.message || GENERIC_MESSAGE,
     code: (err as { code?: string }).code || 'INTERNAL_ERROR',
-    details: process.env.NODE_ENV === 'development' ? err : undefined,
+    details: config.env === 'development' ? err : undefined,
   };
-
-  console.error(`[Error ${status}]:`, apiError.message);
 
   res.status(status).json({
     success: false,

@@ -15,6 +15,7 @@ help:
 	@echo "  make build        - Build client for production"
 	@echo "  make deploy       - Deploy client to GitHub Pages (runs lint first)"
 	@echo "  make lint         - Run linter for client and server"
+	@echo "  make test         - Run server unit tests and typecheck"
 	@echo "  make format       - Run formatter for client and server"
 	@echo "  make format-check - Check formatting for client and server"
 	@echo "  make clean        - Remove build artifacts and node_modules"
@@ -87,6 +88,11 @@ lint:
 	cd $(CLIENT_DIR) && npm run lint
 	@echo "Running lint for server..."
 	cd $(SERVER_DIR) && npm run lint
+
+# Testing
+.PHONY: test
+test:
+	cd $(SERVER_DIR) && npm run typecheck && npm test
 
 # Formatting
 .PHONY: format

@@ -15,7 +15,7 @@ type State = {
 type Action =
   | { type: 'SET_SESSIONS'; payload: ChatSession[] }
   | { type: 'ADD_SESSION'; payload: ChatSession }
-  | { type: 'SET_CURRENT_SESSION'; payload: string }
+  | { type: 'SET_CURRENT_SESSION'; payload: string | null }
   | { type: 'SET_MESSAGES'; payload: Message[] }
   | { type: 'APPEND_MESSAGE'; payload: Message }
   | { type: 'SET_MODELS'; payload: ChatModel[] }
@@ -112,21 +112,13 @@ export const useChatService = () => {
       .catch((e) => console.error('Failed to fetch models:', e));
   }, []);
 
-  const startNewChat = useCallback(
-    async (modelId?: string | React.MouseEvent) => {
-      const actualModelId = typeof modelId === 'string' ? modelId : state.selectedModel.id;
-      try {
-        const newSession = await api.createSession(actualModelId, 'New Chat');
-        dispatch({ type: 'ADD_SESSION', payload: newSession });
-        dispatch({ type: 'SET_CURRENT_SESSION', payload: newSession.id });
-        dispatch({ type: 'SET_MESSAGES', payload: [] });
-        setHistoryOpen(false);
-      } catch (e) {
-        console.error('Failed to start new chat:', e);
-      }
-    },
-    [state.selectedModel.id]
-  );
+  // The session is created on the first message, so an abandoned new chat
+  // never leaves an empty "New Chat" row sitting in the history list.
+  const startNewChat = useCallback(() => {
+    dispatch({ type: 'SET_CURRENT_SESSION', payload: null });
+    dispatch({ type: 'SET_MESSAGES', payload: [] });
+    setHistoryOpen(false);
+  }, []);
 
   const loadSession = useCallback(
     async (sessionId: string) => {
@@ -242,7 +234,9 @@ export const useChatService = () => {
     loadSession,
     sendMessage,
     setSelectedModel,
-    activeSuggestions,
+    // Conversation starters only, and they float over the empty state, so they
+    // retire once there is a conversation for them to cover.
+    activeSuggestions: state.messages.length === 0 ? activeSuggestions : [],
     stopGeneration,
   };
 };
