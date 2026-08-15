@@ -14,7 +14,7 @@ export type WindowState = {
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [windows, setWindows] = useState<Record<string, WindowState>>({});
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
-  const [maxZIndex, setMaxZIndex] = useState(10);
+  const [maxZIndex, setMaxZIndex] = useState(30);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {

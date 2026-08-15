@@ -63,7 +63,7 @@ export const projectsData: Project[] = [
     highlights: [
       "Engineered a data grid holding 4,000+ concurrent live data points at sub-16ms render times, with business logic kept in an RxJS services layer rather than components.",
       "Established a rigorous automated testing architecture of 500+ Playwright E2E and Vitest unit tests, reducing flakiness 90%.",
-      "Tuned PostgreSQL indexing and queries alongside Django/Celery calculation engines, cutting database overhead 35% and REST API latency 30%.",
+      "Tuned PostgreSQL indexing and queries alongside Python/Django calculation engines, cutting database overhead 35% and REST API latency 30%.",
       "Modernized a large, legacy enterprise application, converting complex state flows into declarative RxJS pipelines.",
     ],
     demoUrl: "https://graintrack.com/en/",

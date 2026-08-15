@@ -10,11 +10,28 @@ export interface ExperienceItem {
 export const experienceData: ExperienceItem[] = [
   {
     id: 1,
+    company: 'UITOP (B2B software development & product design)',
+    period: 'Jul 2026 - Present',
+    title: 'Software Engineer',
+    description:
+      'Outstaffing engagement on a client project (Surge AI), working close to the client team on evaluation of agentic coding models. Stress-test agentic coding models on real engineering work: find where they break, reproduce the failure, and document the failure mode. Author realistic coding tasks and evaluation scenarios across full-stack work in TypeScript/React and Node.js/Python, so model performance is measured on production-shaped problems instead of toy prompts. Assess model output quality end to end: correctness, architectural judgment, test coverage, and how the model behaves in long multi-step agent loops.',
+    tags: [
+      'Agentic Model Evaluation',
+      'TypeScript',
+      'React',
+      'Node.js',
+      'Python',
+      'LLM Tooling',
+      'Prompt Engineering',
+    ],
+  },
+  {
+    id: 2,
     company: 'Graintrack (CTRM System)',
-    period: 'Aug 2025 - Present',
+    period: 'Aug 2025 - Jul 2026',
     title: 'Full-Stack Software Engineer',
     description:
-      "Delivered features across a CTRM platform's core domains — logistics, warehouse management, contract flow, passports, sales/purchases, calculations, analytics and reporting — including role-based access control with fine-grained permissions. Engineered a React 19 / RxJS data grid holding 4,000+ concurrent live data points at sub-16ms render times, with business logic kept in an RxJS services layer and React Query caching. Built calculation engines in Python/Django with Celery workers, refactored a legacy raw-SQL-in-viewsets antipattern toward maintainable ORM code, and tuned PostgreSQL indexing and queries to cut database overhead 35% and REST API latency 30%. Co-designed an EARS-based requirements tree pinned in code, and as Head of QA owned 500+ Playwright E2E and Vitest unit tests, reducing flakiness 90%. Within 8 months became second final approver alongside the CTO, reviewing every PR, mentoring, and leading the incremental migration of legacy AngularJS to TypeScript/React via the strangler pattern. Led internal security audits against OWASP Top 10 and established database and API authorization controls including Row-Level Security.",
+      "Engineered a complex React 19 / RxJS data grid for bulk commodity operations, managing 4,000+ concurrent dynamic data points at sub-16ms render times, with React Query (TanStack Query) for efficient server-state caching. Built calculation engines in Python/Django and optimized slow PostgreSQL queries via advanced indexing and query rewriting, reducing query overhead 35% and REST API latency 30% under peak transaction loads. Led internal security audits aligning full-stack systems with OWASP Top 10 and established secure database and API authorization controls for transaction calculation modules. As one of the team's technical decision-makers, drove architecture decisions, reviewed every pull request, mentored teammates, and partnered with product and design to scope and deliver features. Developed and maintained 500+ E2E (Playwright) and unit (Vitest) tests, reducing flakiness 90%, and used AI-assisted workflows to accelerate refactoring and testing pipelines. Led incremental migration of legacy AngularJS (1.8) modules to TypeScript and React, improving client-server data flow and observability.",
     tags: [
       'React 19',
       'RxJS',
@@ -22,14 +39,14 @@ export const experienceData: ExperienceItem[] = [
       'React Query',
       'Python',
       'Django',
-      'Celery',
       'PostgreSQL',
+      'AngularJS',
       'Playwright',
       'Vitest',
     ],
   },
   {
-    id: 2,
+    id: 3,
     company: 'Independent / Contract',
     period: 'Jun 2023 - Jul 2025',
     title: 'Full-Stack Developer',
@@ -46,7 +63,7 @@ export const experienceData: ExperienceItem[] = [
     ],
   },
   {
-    id: 3,
+    id: 4,
     company: 'Realis',
     period: 'Jan 2025 - Jun 2025',
     title: 'Frontend Developer (Contract)',

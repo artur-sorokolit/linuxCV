@@ -566,9 +566,45 @@
   top: 84px;
   left: 12px;
   bottom: 56px;
-  width: 460px;
-  z-index: 2;
+  z-index: 20;
   pointer-events: auto;
+}
+
+.desktop-chat-widget__resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -7px;
+  width: 14px;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+  z-index: 3;
+}
+
+.desktop-chat-widget__resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 56px;
+  transform: translate(-50%, -50%);
+  border-radius: 3px;
+  background: rgba(166, 81, 251, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.desktop-chat-widget__resize-handle:hover::after,
+.desktop-chat-widget__resize-handle:focus-visible::after,
+.desktop-chat-widget--resizing .desktop-chat-widget__resize-handle::after {
+  opacity: 1;
+}
+
+body.chat-resize-active {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .desktop-chat-widget .chat-panel {

@@ -9,7 +9,7 @@ import { DesktopIcon } from './ui/DesktopIcon/DesktopIcon';
 import { Taskbar } from './ui/Taskbar/Taskbar';
 import './App.css';
 import Banner from './ui/banner/Banner';
-import Chat from '@/features/Chat/Chat';
+import { DesktopChatWidget } from '@/features/Chat/components/DesktopChatWidget';
 
 const Desktop = () => {
   const { isMobile, windows } = useOS();
@@ -29,12 +29,7 @@ const Desktop = () => {
         </>
       )}
 
-      {/* Pinned Desktop Chat Widget (Desktop Only) */}
-      {!isMobile && (
-        <div className="desktop-chat-widget">
-          <Chat />
-        </div>
-      )}
+      {!isMobile && <DesktopChatWidget />}
 
       <div className="desktop-icons">
         {appConfigs
