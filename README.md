@@ -120,14 +120,23 @@ Three tables, migrated from `server/src/migrations/`.
 - `chat_sessions`: one conversation. Carries the visitor it belongs to, the IP hash as it was at the time, `message_count` and `last_message_at`.
 - `chat_messages`: one row per message, ordered by `seq` within its session. `status` records how the turn went, where `ok` means answered normally, `refused` means redirected by the scope gate or the code-dump filter, and `error` means the upstream call failed. Only `ok` turns are ever replayed to a model, so a refusal stays visible in the history without priming later answers.
 
-Two views make the data readable without writing joins:
+Four views make the data readable without writing joins. Two for scanning who came:
 
 ```sql
 SELECT * FROM v_conversations ORDER BY last_message_at DESC;  -- one row per conversation
 SELECT * FROM v_visits ORDER BY started_at DESC;              -- one row per sitting
 ```
 
-`v_visits` groups a visitor's sessions that start less than 30 minutes apart, which is how one person reads as one person rather than as several rows.
+`v_visits` groups a visitor's sessions that start less than 30 minutes apart, which is how one person reads as one person rather than as several rows. Both list the questions only, since that is what a scan is for.
+
+Two for reading what was actually said:
+
+```sql
+SELECT * FROM v_messages ORDER BY created_at DESC, seq;   -- one row per message
+SELECT dialogue FROM v_transcript WHERE session_id = '…';  -- the exchange in one cell
+```
+
+`v_transcript` renders a whole session as `Q:` and `A:` lines, marking any turn the gate refused or the model failed.
 
 ## Deployment Architecture
 
