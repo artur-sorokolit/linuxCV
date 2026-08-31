@@ -32,8 +32,12 @@ const envSchema = z.object({
   OPENROUTER_API_KEY: requiredInProduction,
   GMAIL_USER: z.email().optional(),
   GMAIL_APP_PASSWORD: z.string().optional(),
-  // Zero keeps every log forever, which is the behaviour this project started with.
-  CHAT_LOG_RETENTION_DAYS: z.coerce.number().int().min(0).default(0),
+  // Visitor IPs are only ever stored hashed, and the salt is what makes that one way:
+  // the whole IPv4 space hashes in minutes without it. Set once and never rotated,
+  // otherwise yesterday's visitors stop grouping with today's.
+  IP_HASH_SALT: requiredInProduction,
+  // Zero keeps every conversation forever, which is the behaviour this project started with.
+  CHAT_RETENTION_DAYS: z.coerce.number().int().min(0).default(0),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -55,5 +59,6 @@ export const config = {
   openrouterApiKey: parsed.data.OPENROUTER_API_KEY,
   gmailUser: parsed.data.GMAIL_USER,
   gmailAppPassword: parsed.data.GMAIL_APP_PASSWORD,
-  chatLogRetentionDays: parsed.data.CHAT_LOG_RETENTION_DAYS,
+  ipHashSalt: parsed.data.IP_HASH_SALT ?? 'linuxcv-local-development-salt',
+  chatRetentionDays: parsed.data.CHAT_RETENTION_DAYS,
 };

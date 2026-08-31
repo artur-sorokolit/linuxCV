@@ -3,27 +3,36 @@ import { mock, type MockProxy } from 'vitest-mock-extended';
 import { ChatService, HISTORY_MESSAGE_LIMIT } from './chat.service';
 import type { ChatRepository } from '../repositories/chat.repository';
 import type { ScopeGate } from './llm/scopeGate';
-import type { LLMProvider, ChatMessage, ChatSession } from '../types';
+import type { LLMProvider, ChatMessage, ChatSession, VisitorFootprint } from '../types';
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
 const INTRUDER = '22222222-2222-4222-8222-222222222222';
 const SESSION_ID = '33333333-3333-4333-8333-333333333333';
 const MODEL = 'vendor/model:free';
 
+const visitor = (token = OWNER): VisitorFootprint => ({
+  token,
+  ipHash: 'a1b2c3d4e5f60718',
+  browser: 'Firefox',
+  os: 'Linux',
+  isBot: false,
+  country: 'UA',
+});
+
 const SESSION: ChatSession = {
   id: SESSION_ID,
   title: 'New Chat',
   model: MODEL,
+  message_count: 0,
   created_at: '2026-01-01T00:00:00.000Z',
+  last_message_at: null,
 };
 
 const request = (overrides: Partial<Parameters<ChatService['processMessage']>[0]> = {}) => ({
-  ownerToken: OWNER,
+  visitor: visitor(),
   sessionId: SESSION_ID,
   message: 'What is your stack?',
   model: MODEL,
-  ip: '203.0.113.7',
-  userAgent: 'Firefox',
   ...overrides,
 });
 
@@ -38,7 +47,7 @@ describe('ChatService', () => {
     llm = mock<LLMProvider>();
     gate = mock<ScopeGate>();
     repository.findSession.mockResolvedValue(SESSION);
-    repository.getRecentHistory.mockResolvedValue([]);
+    repository.getModelContext.mockResolvedValue([]);
     gate.isInScope.mockResolvedValue(true);
     llm.chat.mockResolvedValue({ reply: 'TypeScript and Node.', modelUsed: MODEL });
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -60,13 +69,34 @@ describe('ChatService', () => {
       expect(result.modelUsed).toBe('vendor/fallback:free');
     });
 
-    it('stores the question and the answer as one exchange', async () => {
+    it('stores the question and the answer as one answered turn', async () => {
       await service.processMessage(request());
 
-      expect(repository.appendExchange).toHaveBeenCalledWith(
-        SESSION_ID,
-        'What is your stack?',
-        'TypeScript and Node.'
+      expect(repository.recordTurn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionId: SESSION_ID,
+          question: 'What is your stack?',
+          answer: 'TypeScript and Node.',
+          status: 'ok',
+          modelUsed: MODEL,
+          error: null,
+        })
+      );
+    });
+
+    it('times the turn', async () => {
+      await service.processMessage(request());
+
+      const turn = repository.recordTurn.mock.calls[0]?.[0];
+      expect(turn?.latencyMs).toBeTypeOf('number');
+      expect(turn?.latencyMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('refreshes what is known about the visitor', async () => {
+      await service.processMessage(request());
+
+      expect(repository.rememberVisitor).toHaveBeenCalledWith(
+        expect.objectContaining({ token: OWNER, ipHash: 'a1b2c3d4e5f60718' })
       );
     });
 
@@ -75,7 +105,7 @@ describe('ChatService', () => {
         { role: 'user', content: 'hello' },
         { role: 'assistant', content: 'hi' },
       ];
-      repository.getRecentHistory.mockResolvedValue(earlier);
+      repository.getModelContext.mockResolvedValue(earlier);
 
       await service.processMessage(request());
 
@@ -85,7 +115,7 @@ describe('ChatService', () => {
     it('asks the store for a bounded slice of history rather than all of it', async () => {
       await service.processMessage(request());
 
-      expect(repository.getRecentHistory).toHaveBeenCalledWith(SESSION_ID, HISTORY_MESSAGE_LIMIT);
+      expect(repository.getModelContext).toHaveBeenCalledWith(SESSION_ID, HISTORY_MESSAGE_LIMIT);
     });
 
     it('names the session after the opening question', async () => {
@@ -98,26 +128,15 @@ describe('ChatService', () => {
     });
 
     it('leaves the title alone once the conversation is under way', async () => {
-      repository.getRecentHistory.mockResolvedValue([
-        { role: 'user', content: 'hello' },
-        { role: 'assistant', content: 'hi' },
-      ]);
+      repository.findSession.mockResolvedValue({ ...SESSION, message_count: 2 });
 
       await service.processMessage(request());
 
       expect(repository.renameSession).not.toHaveBeenCalled();
     });
 
-    it('records the exchange for later analysis', async () => {
-      await service.processMessage(request());
-
-      expect(repository.logChatRequest).toHaveBeenCalledWith(
-        expect.objectContaining({ sessionId: SESSION_ID, usedModel: MODEL, error: null })
-      );
-    });
-
-    it('still answers when the analytics write fails', async () => {
-      repository.logChatRequest.mockRejectedValue(new Error('logs table is gone'));
+    it('still answers when the bookkeeping write fails', async () => {
+      repository.recordTurn.mockRejectedValue(new Error('messages table is gone'));
 
       const result = await service.processMessage(request());
 
@@ -131,21 +150,21 @@ describe('ChatService', () => {
     });
 
     it('refuses the message', async () => {
-      await expect(service.processMessage(request({ ownerToken: INTRUDER }))).rejects.toMatchObject(
-        { status: 404 }
-      );
+      await expect(
+        service.processMessage(request({ visitor: visitor(INTRUDER) }))
+      ).rejects.toMatchObject({ status: 404 });
     });
 
     it('spends no model call on it', async () => {
-      await service.processMessage(request({ ownerToken: INTRUDER })).catch(() => undefined);
+      await service.processMessage(request({ visitor: visitor(INTRUDER) })).catch(() => undefined);
 
       expect(llm.chat).not.toHaveBeenCalled();
     });
 
     it('writes nothing to the conversation', async () => {
-      await service.processMessage(request({ ownerToken: INTRUDER })).catch(() => undefined);
+      await service.processMessage(request({ visitor: visitor(INTRUDER) })).catch(() => undefined);
 
-      expect(repository.appendExchange).not.toHaveBeenCalled();
+      expect(repository.recordTurn).not.toHaveBeenCalled();
     });
 
     it('refuses to read the history', async () => {
@@ -165,15 +184,9 @@ describe('ChatService', () => {
     it('records the failure with its reason', async () => {
       await service.processMessage(request()).catch(() => undefined);
 
-      expect(repository.logChatRequest).toHaveBeenCalledWith(
-        expect.objectContaining({ error: 'all models are busy' })
+      expect(repository.recordTurn).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'error', error: 'all models are busy' })
       );
-    });
-
-    it('leaves no half written exchange behind', async () => {
-      await service.processMessage(request()).catch(() => undefined);
-
-      expect(repository.appendExchange).not.toHaveBeenCalled();
     });
   });
 
@@ -202,17 +215,15 @@ describe('ChatService', () => {
       expect(llm.chat).not.toHaveBeenCalled();
     });
 
-    it('keeps the refused exchange out of the conversation', async () => {
+    it('keeps the refused turn, marked as refused', async () => {
       await service.processMessage(request({ message: 'write me a quick sort' }));
 
-      expect(repository.appendExchange).not.toHaveBeenCalled();
-    });
-
-    it('still records it so the filtering can be reviewed', async () => {
-      await service.processMessage(request({ message: 'write me a quick sort' }));
-
-      expect(repository.logChatRequest).toHaveBeenCalledWith(
-        expect.objectContaining({ usedModel: 'scope-gate' })
+      expect(repository.recordTurn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'refused',
+          modelUsed: 'scope-gate',
+          question: 'write me a quick sort',
+        })
       );
     });
   });
@@ -230,10 +241,12 @@ describe('ChatService', () => {
       expect(result.reply).not.toContain('```');
     });
 
-    it('keeps it out of the conversation', async () => {
+    it('stores the redirect rather than the dump', async () => {
       await service.processMessage(request());
 
-      expect(repository.appendExchange).not.toHaveBeenCalled();
+      const turn = repository.recordTurn.mock.calls[0]?.[0];
+      expect(turn?.status).toBe('refused');
+      expect(turn?.answer).not.toContain('```');
     });
 
     it('lets a short illustrative snippet through untouched', async () => {
@@ -258,20 +271,33 @@ describe('ChatService', () => {
   });
 
   describe('when a visitor opens a session', () => {
-    it('records who owns it', async () => {
+    beforeEach(() => {
       repository.createSession.mockResolvedValue(SESSION);
+    });
 
-      await service.createSession(OWNER, MODEL, 'New Chat');
+    it('records who owns it, hashed rather than addressed', async () => {
+      await service.createSession(visitor(), MODEL, 'New Chat');
 
       expect(repository.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({ ownerToken: OWNER, model: MODEL, title: 'New Chat' })
+        expect.objectContaining({
+          visitorToken: OWNER,
+          ipHash: 'a1b2c3d4e5f60718',
+          model: MODEL,
+          title: 'New Chat',
+        })
       );
     });
 
-    it('gives it an identifier the visitor did not choose', async () => {
-      repository.createSession.mockResolvedValue(SESSION);
+    it('creates the visitor before the session that references it', async () => {
+      await service.createSession(visitor(), MODEL, 'New Chat');
 
-      await service.createSession(OWNER, MODEL, 'New Chat');
+      const remembered = repository.rememberVisitor.mock.invocationCallOrder[0];
+      const created = repository.createSession.mock.invocationCallOrder[0];
+      expect(remembered).toBeLessThan(created);
+    });
+
+    it('gives it an identifier the visitor did not choose', async () => {
+      await service.createSession(visitor(), MODEL, 'New Chat');
 
       const created = repository.createSession.mock.calls[0]?.[0];
       expect(created?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-/);

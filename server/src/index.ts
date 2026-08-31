@@ -1,14 +1,14 @@
 import app from './app';
 import { config } from './config/env';
 import { getDb, closeDb } from './db';
-import { startLogRetention } from './services/logRetention';
+import { startChatRetention } from './services/chatRetention';
 
 const SHUTDOWN_SIGNALS = ['SIGTERM', 'SIGINT'] as const;
 
 async function bootstrap() {
   try {
     await getDb();
-    const stopRetention = startLogRetention(config.chatLogRetentionDays);
+    const stopRetention = startChatRetention(config.chatRetentionDays);
 
     const server = app.listen(config.port, () => {
       console.log(`🚀 Server is running on http://localhost:${config.port}`);

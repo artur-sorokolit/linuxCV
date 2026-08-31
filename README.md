@@ -87,7 +87,8 @@ DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 DATABASE_SSL=true            # set to false for a local Postgres without TLS
 CORS_ORIGINS=https://artur-sorokolit.uk,http://localhost:5173
 OPENROUTER_API_KEY=your_openrouter_key
-CHAT_LOG_RETENTION_DAYS=0    # 0 keeps chat_logs forever; any positive value prunes daily
+IP_HASH_SALT=any_long_random_string   # required in production, set once and never rotated
+CHAT_RETENTION_DAYS=0        # 0 keeps conversations forever; any positive value prunes daily
 
 # Email notifications (Gmail SMTP Setup)
 GMAIL_USER=your_email@gmail.com
@@ -111,13 +112,30 @@ VITE_API_URL=http://localhost:5000   # for local development
 REMOTE_SSH_TARGET=user@ssh.yourdomain.com:~/work/project-dir/
 ```
 
+## Chat Data Model
+
+Three tables, migrated from `server/src/migrations/`.
+
+- `visitors`: one row per browser, keyed by the token the client keeps in `localStorage`. Holds a salted hash of the IP (never the address itself), the browser and OS family parsed out of the User-Agent, a bot flag, and the Cloudflare country code. `label` is free text for annotating a visitor by hand.
+- `chat_sessions`: one conversation. Carries the visitor it belongs to, the IP hash as it was at the time, `message_count` and `last_message_at`.
+- `chat_messages`: one row per message, ordered by `seq` within its session. `status` records how the turn went, where `ok` means answered normally, `refused` means redirected by the scope gate or the code-dump filter, and `error` means the upstream call failed. Only `ok` turns are ever replayed to a model, so a refusal stays visible in the history without priming later answers.
+
+Two views make the data readable without writing joins:
+
+```sql
+SELECT * FROM v_conversations ORDER BY last_message_at DESC;  -- one row per conversation
+SELECT * FROM v_visits ORDER BY started_at DESC;              -- one row per sitting
+```
+
+`v_visits` groups a visitor's sessions that start less than 30 minutes apart, which is how one person reads as one person rather than as several rows.
+
 ## Deployment Architecture
 
 The application runs entirely on free tiers:
 
 - **Frontend (Client)**: Built and served via **Cloudflare** at [https://artur-sorokolit.uk](https://artur-sorokolit.uk) (also mirrored to GitHub Pages).
 - **Backend (Server)**: **Render** free web service, built from `render.yaml` at the repo root. Free instances spin down after 15 minutes of inactivity and take roughly a minute to wake up.
-- **Database**: **Neon** free Postgres. Schema is created automatically on boot by the migration runner in `server/src/db.ts`.
+- **Database**: **Neon** free Postgres. Migrations live in `server/src/migrations/` as numbered `.sql` files and are applied on boot, or on demand with `npm run migrate`.
 - **API domain**: `api.artur-sorokolit.uk` is a CNAME to the Render service, so the client's `VITE_API_URL` never changes.
 
 ### Deploying the backend

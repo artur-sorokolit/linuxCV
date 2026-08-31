@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ChatMessage, LLMProvider, ChatSession } from '../types';
+import { ChatSession, StoredMessage, TurnStatus, VisitorFootprint } from '../types';
+import { LLMProvider } from '../types';
 import { OpenRouterService } from './llm/openrouter.service';
 import { scopeGate as defaultScopeGate, type ScopeGate } from './llm/scopeGate';
 import { isCodeDump } from './llm/replyFilter';
@@ -13,12 +14,18 @@ const TITLE_LENGTH = 27;
 const SCOPE_GATE_MODEL = 'scope-gate';
 
 export interface ChatRequest {
-  ownerToken: string;
+  visitor: VisitorFootprint;
   sessionId: string;
   message: string;
   model: string;
-  ip?: string;
-  userAgent?: string;
+}
+
+interface TurnOutcome {
+  answer: string;
+  status: TurnStatus;
+  modelUsed: string;
+  error: string | null;
+  startedAt: number;
 }
 
 const toTitle = (message: string): string =>
@@ -31,92 +38,128 @@ export class ChatService {
     private readonly scopeGate: ScopeGate = defaultScopeGate
   ) {}
 
-  async createSession(ownerToken: string, model: string, title: string): Promise<ChatSession> {
-    return this.repository.createSession({ id: uuidv4(), title, model, ownerToken });
+  async createSession(
+    visitor: VisitorFootprint,
+    model: string,
+    title: string
+  ): Promise<ChatSession> {
+    // The visitor row has to exist before a session can point at it.
+    await this.repository.rememberVisitor(visitor);
+    return this.repository.createSession({
+      id: uuidv4(),
+      title,
+      model,
+      visitorToken: visitor.token,
+      ipHash: visitor.ipHash,
+    });
   }
 
-  async listSessions(ownerToken: string): Promise<ChatSession[]> {
-    return this.repository.listSessions(ownerToken);
+  async listSessions(visitorToken: string): Promise<ChatSession[]> {
+    return this.repository.listSessions(visitorToken);
   }
 
-  async getHistory(ownerToken: string, sessionId: string): Promise<ChatMessage[]> {
-    await this.requireOwnedSession(ownerToken, sessionId);
-    return this.repository.getRecentHistory(sessionId, HISTORY_MESSAGE_LIMIT);
+  async getHistory(visitorToken: string, sessionId: string): Promise<StoredMessage[]> {
+    await this.requireOwnedSession(visitorToken, sessionId);
+    return this.repository.getConversation(sessionId, HISTORY_MESSAGE_LIMIT);
   }
 
   async processMessage(request: ChatRequest): Promise<{ reply: string; modelUsed: string }> {
-    await this.requireOwnedSession(request.ownerToken, request.sessionId);
+    const session = await this.requireOwnedSession(request.visitor.token, request.sessionId);
+    const startedAt = Date.now();
 
     if (!(await this.scopeGate.isInScope(request.message))) {
-      return this.redirect(request, SCOPE_GATE_MODEL);
+      return this.redirect(request, session, SCOPE_GATE_MODEL, startedAt);
     }
 
-    const history = await this.repository.getRecentHistory(
-      request.sessionId,
-      HISTORY_MESSAGE_LIMIT
-    );
+    const context = await this.repository.getModelContext(request.sessionId, HISTORY_MESSAGE_LIMIT);
 
     try {
       const { reply, modelUsed } = await this.llmProvider.chat(
         request.message,
-        history,
+        context,
         request.model
       );
 
       // A tutorial-sized listing means the model drifted past what this chat is for.
       if (isCodeDump(reply)) {
-        return this.redirect(request, modelUsed);
+        return this.redirect(request, session, modelUsed, startedAt);
       }
 
-      await this.repository.appendExchange(request.sessionId, request.message, reply);
-      if (history.length === 0) {
-        await this.repository.renameSession(request.sessionId, toTitle(request.message));
-      }
-
-      await this.log(request, { reply, usedModel: modelUsed, error: null });
+      await this.record(request, session, {
+        answer: reply,
+        status: 'ok',
+        modelUsed,
+        error: null,
+        startedAt,
+      });
       return { reply, modelUsed };
     } catch (error: unknown) {
       const reason = error instanceof Error ? error.message : String(error);
-      await this.log(request, { reply: null, usedModel: request.model, error: reason });
+      await this.record(request, session, {
+        answer: reason,
+        status: 'error',
+        modelUsed: request.model,
+        error: reason,
+        startedAt,
+      });
       throw error;
     }
   }
 
-  /** Off-topic turns stay out of the history, so they cannot prime later answers. */
+  /**
+   * An off-topic turn is kept, so the conversation reads whole and the filtering can
+   * be reviewed. Its status keeps it out of every context handed to a model.
+   */
   private async redirect(
     request: ChatRequest,
-    usedModel: string
+    session: ChatSession,
+    usedModel: string,
+    startedAt: number
   ): Promise<{ reply: string; modelUsed: string }> {
     const reply = buildRefusal(request.message);
-    await this.log(request, { reply, usedModel, error: null });
+    await this.record(request, session, {
+      answer: reply,
+      status: 'refused',
+      modelUsed: usedModel,
+      error: null,
+      startedAt,
+    });
     return { reply, modelUsed: usedModel };
   }
 
-  private async requireOwnedSession(ownerToken: string, sessionId: string): Promise<void> {
-    const session = await this.repository.findSession(sessionId, ownerToken);
+  private async requireOwnedSession(visitorToken: string, sessionId: string): Promise<ChatSession> {
+    const session = await this.repository.findSession(sessionId, visitorToken);
     if (!session) {
       throw httpError(404, 'SESSION_NOT_FOUND', 'Chat session not found');
     }
+    return session;
   }
 
-  /** Analytics must never sink a reply the visitor is already waiting on. */
-  private async log(
+  /** A bookkeeping failure must never sink a reply the visitor is already waiting on. */
+  private async record(
     request: ChatRequest,
-    outcome: { reply: string | null; usedModel: string; error: string | null }
+    session: ChatSession,
+    outcome: TurnOutcome
   ): Promise<void> {
     try {
-      await this.repository.logChatRequest({
+      await this.repository.rememberVisitor(request.visitor);
+      await this.repository.recordTurn({
         sessionId: request.sessionId,
-        ip: request.ip ?? null,
-        userAgent: request.userAgent ?? null,
+        question: request.message,
+        answer: outcome.answer,
+        status: outcome.status,
         model: request.model,
-        usedModel: outcome.usedModel,
-        message: request.message,
-        reply: outcome.reply,
+        modelUsed: outcome.modelUsed,
         error: outcome.error,
+        latencyMs: Date.now() - outcome.startedAt,
       });
-    } catch (logError) {
-      console.error('🔴 Failed to write to chat_logs:', logError);
+
+      // The client sends a provisional title, the first question replaces it.
+      if (session.message_count === 0) {
+        await this.repository.renameSession(request.sessionId, toTitle(request.message));
+      }
+    } catch (writeError) {
+      console.error('🔴 Failed to record the turn:', writeError);
     }
   }
 }
