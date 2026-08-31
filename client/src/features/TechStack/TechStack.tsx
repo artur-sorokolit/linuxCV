@@ -13,25 +13,30 @@ const TechStack = () => {
         </p>
       </div>
       <div className="tech-stack__categories">
-        {techStackData.map((category, i) => (
-          <div
-            className="tech-stack-card"
-            key={i}
-            style={{ '--category-color': category.color } as React.CSSProperties}
-          >
-            <div className="tech-stack-card__header">
-              <div className="tech-stack-card__marker" style={{ background: category.color }}></div>
-              <h3 className="tech-stack-card__title">{category.title}</h3>
+        <div className="tech-stack__grid">
+          {techStackData.map((category, i) => (
+            <div
+              className="tech-stack-card"
+              key={i}
+              style={{ '--category-color': category.color } as React.CSSProperties}
+            >
+              <div className="tech-stack-card__header">
+                <div
+                  className="tech-stack-card__marker"
+                  style={{ background: category.color }}
+                ></div>
+                <h3 className="tech-stack-card__title">{category.title}</h3>
+              </div>
+              <div className="tech-stack-card__tags">
+                {category.tags.map((tag) => (
+                  <span className="tech-stack-card__tag" key={tag}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="tech-stack-card__tags">
-              {category.tags.map((tag) => (
-                <span className="tech-stack-card__tag" key={tag}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

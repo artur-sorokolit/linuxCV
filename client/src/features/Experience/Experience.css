@@ -91,6 +91,35 @@
   margin-bottom: 1rem;
 }
 
+.card-highlights {
+  list-style: none;
+  margin: 0 0 1rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-highlights li {
+  position: relative;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* Drawn rather than a list marker, so the accent colour matches the timeline. */
+.card-highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #4facfe;
+}
+
 .card-tags {
   display: flex;
   flex-wrap: wrap;

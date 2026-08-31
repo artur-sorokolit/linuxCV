@@ -31,6 +31,12 @@ const Experience = () => {
 
               <p className="card-description">{item.description}</p>
 
+              <ul className="card-highlights">
+                {item.highlights.map((highlight, index) => (
+                  <li key={index}>{highlight}</li>
+                ))}
+              </ul>
+
               <div className="card-tags">
                 {item.tags.map((tag, index) => (
                   <span key={index} className="tag">

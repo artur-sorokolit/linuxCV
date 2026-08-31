@@ -22,7 +22,9 @@ function composeSystemPrompt(): string {
   const experience = experienceData
     .map(
       (e) =>
-        `${e.id}. ${e.company} (${e.period}) | ${e.title}:\n  ${e.description}\n  Tech: ${e.tags.join(', ')}.`
+        `${e.id}. ${e.company} (${e.period}) | ${e.title}:\n  ${e.description}\n${e.highlights
+          .map((h) => `  - ${h}`)
+          .join('\n')}\n  Tech: ${e.tags.join(', ')}.`
     )
     .join('\n\n');
 
